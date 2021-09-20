@@ -14,7 +14,7 @@ def renderTime(px_height: int, time: datetime.time = None, color: Tuple[int, int
     global font, font_height
     if font == None or font_height != px_height:
         print("Loading new font for time rendering...")
-        font = pygame.font.Font("resources/fonts/Lato-Regular.ttf", px_height)
+        font = pygame.font.Font("resources/fonts/Lato-Bold.ttf", px_height)
         font_height = px_height
     if time == None:
         time = datetime.datetime.now().time()

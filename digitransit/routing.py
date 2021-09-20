@@ -58,4 +58,6 @@ def get_stop_info(endpoint: str, stopcode: int) -> Stop:
         raise RuntimeError(f"Invalid response! Response below:\n{response.content}")
 
     d = json.loads(response.content)
+    if d["data"]["stop"] == None:
+      raise ValueError("Invalid stopcode!")
     return Stop(**d["data"]["stop"])

@@ -1,7 +1,8 @@
 {
     "stopcode": 826,
-    "poll_rate": 60,
+    "poll_rate": -1,
     "endpoint": "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql",
-    "window_size": [288, 512],
-    "fullscreen": false
+    "window_size": [576, 1024],
+    "fullscreen": false,
+    "framerate": -1
 }
