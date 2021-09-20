@@ -1,4 +1,4 @@
-from digitransit.enums import Endpoint, Mode, RealtimeState
+from digitransit.enums import Mode, RealtimeState
 import json
 import requests
 
@@ -14,6 +14,7 @@ class Stoptime:
         self.realtimeState: RealtimeState = RealtimeState(kwargs["realtimeState"])
         self.serviceDay: int = kwargs["serviceDay"]
         self.headsign: str = kwargs["headsign"]
+        self.trip: Trip = Trip(**kwargs["trip"])
 
 class Stop:
     def __init__(self, **kwargs) -> None:
@@ -22,32 +23,37 @@ class Stop:
 
         self.stoptimes = [Stoptime(**stoptime) for stoptime in kwargs["stoptimesWithoutPatterns"]]
 
+class Trip:
+    def __init__(self, **kwargs) -> None:
+        self.routeShortName: str = kwargs["routeShortName"]
 
-def get_stop_info(endpoint: Endpoint, stopcode: int) -> Stop:
-    url = f"https://api.digitransit.fi/routing/v1/routers/{endpoint.value}/index/graphql"
-
+def get_stop_info(endpoint: str, stopcode: int) -> Stop:
     query = """{
-            stop(id: "tampere:STOPID") {
-                name
-                vehicleMode
-                stoptimesWithoutPatterns {
-                scheduledArrival
-                realtimeArrival
-                arrivalDelay
-                scheduledDeparture
-                realtimeDeparture
-                departureDelay
-                realtime
-                realtimeState
-                serviceDay
-                headsign
-                }
-            }
-            }""".replace("STOPID", f"{stopcode:04d}")
+  stop(id: "tampere:STOPID") {
+    name
+    vehicleMode
+    stoptimesWithoutPatterns {
+      scheduledArrival
+      realtimeArrival
+      arrivalDelay
+      scheduledDeparture
+      realtimeDeparture
+      departureDelay
+      realtime
+      realtimeState
+      serviceDay
+      headsign
+      trip {
+        routeShortName
+      }
+    }
+  }
+}
+""".replace("STOPID", f"{stopcode:04d}")
 
     jsonString = "{\"query\": " + json.dumps(query) + "}"
 
-    response = requests.post(url, jsonString, headers={"content-type": "application/json"})
+    response = requests.post(endpoint, jsonString, headers={"content-type": "application/json"})
     if not response.ok:
         raise RuntimeError(f"Invalid response! Response below:\n{response.content}")
 

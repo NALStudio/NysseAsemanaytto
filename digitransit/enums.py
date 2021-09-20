@@ -16,11 +16,6 @@ class Mode(Enum):
 
     TRANSIT = "TRANSIT"
 
-class Endpoint(Enum):
-    HELSINKI = "hsl"
-    WALTTI = "waltti"
-    FINLAND = "finland"
-
 class RealtimeState(Enum):
     SCHEDULED = "SCHEDULED"
     UPDATED = "UPDATED"
