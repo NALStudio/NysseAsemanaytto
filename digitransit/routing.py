@@ -1,3 +1,4 @@
+from typing import Optional
 from digitransit.enums import Mode, RealtimeState
 import json
 import requests
@@ -27,12 +28,12 @@ class Trip:
     def __init__(self, **kwargs) -> None:
         self.routeShortName: str = kwargs["routeShortName"]
 
-def get_stop_info(endpoint: str, stopcode: int) -> Stop:
+def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: Optional[int] = None) -> Stop:
     query = """{
   stop(id: "tampere:STOPID") {
     name
     vehicleMode
-    stoptimesWithoutPatterns {
+    stoptimesWithoutPatternsNUMDEPARTS {
       scheduledArrival
       realtimeArrival
       arrivalDelay
@@ -49,7 +50,7 @@ def get_stop_info(endpoint: str, stopcode: int) -> Stop:
     }
   }
 }
-""".replace("STOPID", f"{stopcode:04d}")
+""".replace("STOPID", f"{stopcode:04d}").replace("NUMDEPARTS", f"(numberOfDepartures: {numberOfDepartures})" if numberOfDepartures != None else "")
 
     jsonString = "{\"query\": " + json.dumps(query) + "}"
 
@@ -60,4 +61,5 @@ def get_stop_info(endpoint: str, stopcode: int) -> Stop:
     d = json.loads(response.content)
     if d["data"]["stop"] == None:
       raise ValueError("Invalid stopcode!")
+    print(d["data"]["stop"])
     return Stop(**d["data"]["stop"])
