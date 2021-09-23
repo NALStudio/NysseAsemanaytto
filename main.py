@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 from core.config import Config
 from core.colors import Colors
 import core.renderers as renderers
@@ -27,15 +27,18 @@ print("Config loaded.")
 
 print("Starting stop info thread...")
 
-def fetchInfo() -> digitransit.routing.Stop:
+def fetchInfo() -> Tuple[digitransit.routing.Stop, Optional[threading.Timer]]:
     global stopinfo
     print("Fetching stop info...")
     stopinfo = digitransit.routing.get_stop_info(config.endpoint, config.stopcode, config.departure_count)
-    return stopinfo
-stopinfo: digitransit.routing.Stop = fetchInfo()
-
-if config.poll_rate > 0:
-    threading.Timer(config.poll_rate, fetchInfo)
+    timer: Optional[threading.Timer] = None
+    if config.poll_rate > 0:
+        timer = threading.Timer(config.poll_rate, fetchInfo)
+        timer.start()
+    return stopinfo, timer
+stopinfo: digitransit.routing.Stop
+fetch_timer: Optional[threading.Timer]
+stopinfo, fetch_timer = fetchInfo()
 print("Thread started.")
 
 print("Creating window...")
@@ -71,7 +74,7 @@ while running:
     #endregion
 
     #region Header
-    header_rect = pygame.Rect(content_offset, content_offset, content_width, round(display_size[1] / 23))
+    header_rect = pygame.Rect(content_offset, content_offset, content_width, round(display_size[0] / 13))
     display.blit(renderers.header.renderHeader(header_rect.size, stopinfo.vehicleMode), header_rect.topleft)
     #endregion
 
@@ -95,3 +98,8 @@ while running:
     pygame.display.flip()
     clock.tick_busy_loop(config.framerate)
     display.fill(Colors.BLACK)
+
+#region Quitting
+if fetch_timer != None:
+    fetch_timer.cancel()
+#endregion

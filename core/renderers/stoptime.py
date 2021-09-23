@@ -4,7 +4,6 @@ import pygame
 import core.renderers.time
 import pygame.font
 import datetime
-import pytz
 from digitransit.routing import Stoptime
 from typing import Optional, Tuple
 
