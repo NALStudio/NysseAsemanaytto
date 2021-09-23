@@ -28,13 +28,13 @@ print("Config loaded.")
 print("Starting stop info thread...")
 
 def fetchInfo() -> Tuple[digitransit.routing.Stop, Optional[threading.Timer]]:
-    global stopinfo
+    global stopinfo, fetch_timer
     print("Fetching stop info...")
     stopinfo = digitransit.routing.get_stop_info(config.endpoint, config.stopcode, config.departure_count)
     timer: Optional[threading.Timer] = None
     if config.poll_rate > 0:
-        timer = threading.Timer(config.poll_rate, fetchInfo)
-        timer.start()
+        fetch_timer = threading.Timer(config.poll_rate, fetchInfo)
+        fetch_timer.start()
     return stopinfo, timer
 stopinfo: digitransit.routing.Stop
 fetch_timer: Optional[threading.Timer]
