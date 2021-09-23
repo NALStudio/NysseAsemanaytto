@@ -1,32 +1,32 @@
-from typing import Optional
+from typing import Any, Dict, List, Optional, Sequence
 from digitransit.enums import Mode, RealtimeState
 import json
 import requests
 
 class Stoptime:
-    def __init__(self, **kwargs) -> None:
-        self.scheduledArrival: int = kwargs["scheduledArrival"]
-        self.realtimeArrival: int = kwargs["realtimeArrival"]
-        self.arrivalDelay: int = kwargs["arrivalDelay"]
-        self.scheduledDeparture: int = kwargs["scheduledDeparture"]
-        self.realtimeDeparture: int = kwargs["realtimeDeparture"]
-        self.departureDelay: int = kwargs["departureDelay"]
-        self.realtime: bool = kwargs["realtime"]
-        self.realtimeState: RealtimeState = RealtimeState(kwargs["realtimeState"])
-        self.serviceDay: int = kwargs["serviceDay"]
-        self.headsign: str = kwargs["headsign"]
-        self.trip: Trip = Trip(**kwargs["trip"])
+    def __init__(self, scheduledArrival: int, realtimeArrival: int, arrivalDelay: int, scheduledDeparture: int, realtimeDeparture: int, departureDelay: int, realtime: bool, realtimeState: str, serviceDay: int, headsign: str, trip: Dict[str, Any]) -> None:
+        self.scheduledArrival: int = scheduledArrival
+        self.realtimeArrival: int = realtimeArrival
+        self.arrivalDelay: int = arrivalDelay
+        self.scheduledDeparture: int = scheduledDeparture
+        self.realtimeDeparture: int = realtimeDeparture
+        self.departureDelay: int = departureDelay
+        self.realtime: bool = realtime
+        self.realtimeState: RealtimeState = RealtimeState(realtimeState)
+        self.serviceDay: int = serviceDay
+        self.headsign: str = headsign
+        self.trip: Trip = Trip(**trip)
 
 class Stop:
-    def __init__(self, **kwargs) -> None:
-        self.name: str = kwargs["name"]
-        self.vehicleMode: Mode = Mode(kwargs["vehicleMode"])
+    def __init__(self, name: str, vehicleMode: str, stoptimesWithoutPatterns: Sequence[Dict[str, Any]]) -> None:
+        self.name: str = name
+        self.vehicleMode: Mode = Mode(vehicleMode)
 
-        self.stoptimes = [Stoptime(**stoptime) for stoptime in kwargs["stoptimesWithoutPatterns"]]
+        self.stoptimes = [Stoptime(**stoptime) for stoptime in stoptimesWithoutPatterns]
 
 class Trip:
-    def __init__(self, **kwargs) -> None:
-        self.routeShortName: str = kwargs["routeShortName"]
+    def __init__(self, routeShortName: str) -> None:
+        self.routeShortName: str = routeShortName
 
 def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: Optional[int] = None) -> Stop:
     query = """{
@@ -61,5 +61,4 @@ def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: Optional[int
     d = json.loads(response.content)
     if d["data"]["stop"] == None:
       raise ValueError("Invalid stopcode!")
-    print(d["data"]["stop"])
     return Stop(**d["data"]["stop"])

@@ -26,10 +26,14 @@ with open("config.json") as f:
 print("Config loaded.")
 
 print("Starting stop info thread...")
-stopinfo: digitransit.routing.Stop = digitransit.routing.get_stop_info(config.endpoint, config.stopcode, config.departure_count)
-def fetchInfo():
+
+def fetchInfo() -> digitransit.routing.Stop:
     global stopinfo
+    print("Fetching stop info...")
     stopinfo = digitransit.routing.get_stop_info(config.endpoint, config.stopcode, config.departure_count)
+    return stopinfo
+stopinfo: digitransit.routing.Stop = fetchInfo()
+
 if config.poll_rate > 0:
     threading.Timer(config.poll_rate, fetchInfo)
 print("Thread started.")
@@ -62,20 +66,24 @@ while running:
         if event.type == pygame.KEYUP:
             debug = not debug
 
+    #region Background
+    display.blit(renderers.background.renderBackground(display_size), (0, 0))
+    #endregion
+
     #region Header
     header_rect = pygame.Rect(content_offset, content_offset, content_width, round(display_size[1] / 23))
     display.blit(renderers.header.renderHeader(header_rect.size, stopinfo.vehicleMode), header_rect.topleft)
     #endregion
 
     #region Stop Info
-    stop_info_rect = pygame.Rect(content_offset, header_rect.bottom + content_spacing * 2, content_width, display_size[0] // 9)
+    stop_info_rect = pygame.Rect(content_offset, header_rect.bottom + content_spacing * 2, content_width, display_size[0] / 9)
     display.blit(renderers.stop_info.renderStopInfo(stop_info_rect.size, stopinfo), stop_info_rect.topleft)
     #endregion
 
     #region Stoptimes
     stoptime_height = stop_info_rect.height
     for i in range(len(stopinfo.stoptimes)):
-        stoptime_rect = pygame.Rect(content_offset, stop_info_rect.bottom + content_spacing + i * (content_spacing + stoptime_height), content_width, stoptime_height)
+        stoptime_rect = pygame.Rect(content_offset, stop_info_rect.bottom + content_spacing + i * (content_spacing / 2 + stoptime_height), content_width, stoptime_height)
         display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, stopinfo.stoptimes[i]), (stoptime_rect.topleft))
     #endregion
 

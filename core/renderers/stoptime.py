@@ -20,7 +20,7 @@ def renderStoptime(px_size: Tuple[int, int], stoptime: Stoptime) -> pygame.Surfa
         font = pygame.font.Font("resources/fonts/Lato-Bold.ttf", font_height)
         font_small = pygame.font.Font("resources/fonts/Lato-Regular.ttf", round(font_height * 0.9))
 
-    surf = pygame.Surface(px_size)
+    surf = pygame.Surface(px_size, pygame.SRCALPHA)
 
     line_number_render = font.render(str(stoptime.trip.routeShortName), True, Colors.WHITE)
     line_headsign_render = font_small.render(str(stoptime.headsign), True, Colors.WHITE)

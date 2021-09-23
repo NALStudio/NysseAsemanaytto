@@ -27,7 +27,7 @@ def renderHeader(px_size: Tuple[int, int], vehicleMode: Mode) -> pygame.Surface:
         nysse_logo_width: float = nysse_logo.get_width() / nysse_logo.get_height() * nysse_logo_height
         nysse_logo = pygame.transform.smoothscale(nysse_logo, (round(nysse_logo_width), round(nysse_logo_height))).convert_alpha()
 
-    surf = pygame.Surface(px_size)
+    surf = pygame.Surface(px_size, pygame.SRCALPHA)
     if transport_icon != None:
         surf.blit(transport_icon, (0, 0))
 
