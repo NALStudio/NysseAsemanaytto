@@ -11,6 +11,7 @@ def generateBackground(px_size: Tuple[int, int]):
     sine_rect = pygame.Rect(0, 0, (px_size[0] / 6) * 5.35, (px_size[0] / 6) * 5.35)
     sine_length: int = 1 + math.ceil(math.hypot(sine_rect.width, sine_rect.height))
 
+    # Frequency matches asemanäyttö, not design guidelines
     sine_freq: float = 19.6452 / sine_rect.width
     sine_amp = 0.0155 * sine_rect.height
 
