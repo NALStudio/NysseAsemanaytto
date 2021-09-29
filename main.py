@@ -66,7 +66,8 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYUP:
-            debug = not debug
+            if event.key == pygame.K_F3:
+                debug = not debug
 
     #region Background
     display.blit(renderers.background.renderBackground(display_size), (0, 0))

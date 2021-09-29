@@ -1,7 +1,7 @@
 {
-    "stopcode": 4000,
+    "stopcode": 3522,
     "departure_count": 10,
-    "poll_rate": 10,
+    "poll_rate": 30,
     "endpoint": "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql",
     "window_size": [360, 640],
     "fullscreen": false,
