@@ -1,6 +1,6 @@
 # NysseAsemanaytto
 
-A configurable copy of Nysse's busstop display.
+### A configurable copy of Nysse's busstop display.
 
 You need to create a `config.json` file from the included `config.example.json` template. <br />
 Config parameters are documented below:
