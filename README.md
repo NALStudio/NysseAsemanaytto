@@ -10,4 +10,4 @@ Config parameters are documented below:
 - `endpoint`: The Digitransit API endpoint you want to send requests to. Can be targeted to a server hosted locally.
 - `window_size`: The size of the window
 - `fullscreen`: Fullscreen? (fullscreen resolution is defined by `window_size`)
-- `framerate`: Limit the window refresh rate. (-1 to disable limit)
+- `framerate`: Limit the window refresh rate. (`-1` to disable limit)
