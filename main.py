@@ -74,7 +74,7 @@ while running:
     #endregion
 
     #region Header
-    header_rect = pygame.Rect(content_offset, content_offset, content_width, round(display_size[0] / 13))
+    header_rect = pygame.Rect(content_offset, content_offset, content_width, display_size[0] / 13)
     display.blit(renderers.header.renderHeader(header_rect.size, stopinfo.vehicleMode), header_rect.topleft)
     #endregion
 
@@ -87,7 +87,13 @@ while running:
     stoptime_height = stop_info_rect.height
     for i in range(len(stopinfo.stoptimes)):
         stoptime_rect = pygame.Rect(content_offset, stop_info_rect.bottom + content_spacing + i * (content_spacing / 2 + stoptime_height), content_width, stoptime_height)
-        display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, stopinfo.stoptimes[i]), (stoptime_rect.topleft))
+        display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, stopinfo.stoptimes[i]), stoptime_rect.topleft)
+    #endregion
+
+    #region Footer
+    footer_rect = pygame.Rect(content_offset, -1, content_width, display_size[0] / 13)
+    footer_rect.y = display_size[1] - content_offset - footer_rect.height
+    display.blit(renderers.footer.renderFooter(footer_rect.size), footer_rect.topleft)
     #endregion
 
     #region Debug
