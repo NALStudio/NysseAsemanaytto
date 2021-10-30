@@ -2,7 +2,8 @@
 
 A configurable copy of Nysse's busstop display.
 
-You need to configure the settings inside a config.json file. Suggested default values are already included inside config.example.json.
+You need to create a `config.json` file from the included `config.example.json` template.
+Config parameters are documented below:
 - `stopcode`: a number (i.e. 3522). If stopcode includes any leading zeros, strip them (i.e. 0825 => 825).
 - `departure_count`: a number that determines how many departures to show.
 - `poll_rate`: how often to refresh the departure data. (Waits the specified amount of seconds between polls. You should avoid doing more than 10 requests before to reduce load on Digitransit's servers)
