@@ -4,7 +4,6 @@ from core.colors import Colors
 import core.renderers as renderers
 
 import threading
-import time
 import os
 import json
 
@@ -101,8 +100,11 @@ while running:
         display.blit(debugFont.render(format(clock.get_fps(), ".3f"), True, Colors.WHITE), (0, 0))
     #endregion
 
+    # NOTE: Assuming no animations are present which need accurate framerate timing and not clock.tick inaccuracies.
+    # NOTE: Before pygame.display.flip, because input latency is not a worry. If we would take any inputs, we should put this after display flip.
+    clock.tick(config.framerate)
+
     pygame.display.flip()
-    clock.tick_busy_loop(config.framerate)
     display.fill(Colors.BLACK)
 
 #region Quitting

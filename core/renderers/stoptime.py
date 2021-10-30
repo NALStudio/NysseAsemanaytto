@@ -29,6 +29,8 @@ def renderStoptime(px_size: Tuple[int, int], stoptime: Stoptime) -> pygame.Surfa
 
     departure_time: datetime.time = datetime.datetime.utcfromtimestamp(stoptime.realtimeDeparture if stoptime.realtime else stoptime.scheduledDeparture).time()
     now = datetime.datetime.now()
+    if departure_time < now.time():
+        departure_time = now.time()
     stop_time_text: str
     if stoptime.realtime and stoptime.realtimeState != RealtimeState.SCHEDULED:
         departure_diff = datetime.datetime.combine(now.date(), departure_time) - now
