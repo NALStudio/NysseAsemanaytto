@@ -2,7 +2,7 @@
 
 A configurable copy of Nysse's busstop display.
 
-You need to create a `config.json` file from the included `config.example.json` template.
+You need to create a `config.json` file from the included `config.example.json` template. <br />
 Config parameters are documented below:
 - `stopcode`: a number (i.e. 3522). If stopcode includes any leading zeros, strip them (i.e. 0825 => 825).
 - `departure_count`: a number that determines how many departures to show.
