@@ -84,9 +84,17 @@ while running:
 
     #region Stoptimes
     stoptime_height = stop_info_rect.height
-    for i in range(len(stopinfo.stoptimes)):
-        stoptime_rect = pygame.Rect(content_offset, stop_info_rect.bottom + content_spacing + i * (content_spacing / 2 + stoptime_height), content_width, stoptime_height)
-        display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, stopinfo.stoptimes[i]), stoptime_rect.topleft)
+    stoptime_y = 0
+    stoptime_i = 0
+    while stoptime_i < len(stopinfo.stoptimes) and ((stoptime_y < config.visible_count) if config.visible_count != None else True):
+        stoptime = stopinfo.stoptimes[stoptime_i]
+        if stoptime.headsign not in config.ignore_headsigns:
+            stoptime_rect = pygame.Rect(content_offset, stop_info_rect.bottom + content_spacing + stoptime_y * (content_spacing / 2 + stoptime_height), content_width, stoptime_height)
+            display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, stopinfo.stoptimes[stoptime_i]), stoptime_rect.topleft)
+
+            stoptime_y += 1
+
+        stoptime_i += 1
     #endregion
 
     #region Footer

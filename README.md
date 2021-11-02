@@ -5,7 +5,9 @@
 You need to create a `config.json` file from the included `config.example.json` template. <br />
 Config parameters are documented below:
 - `stopcode`: a number (i.e. `3522`). If stopcode includes any leading zeros, strip them (i.e. `0825` => `825`).
-- `departure_count`: a number that determines how many departures to show.
+- `ignore_headsigns`: Any headsigns of lines to ignore.
+- `departure_count`: a number that determines how many departures to fetch. Will determine the maximum amount of departures to show.
+- `visible_count`: if not null, will limit the number of departures to show below `departure_count`.
 - `poll_rate`: how often to refresh the departure data. Waits the specified amount of seconds between requests. (If you are not self-hosting the server, you should avoid doing more than 10 requests per second to reduce load on Digitransit's servers.)
 - `endpoint`: The Digitransit API endpoint you want to send requests to. Can be targeted to a server hosted locally.
 - `window_size`: The size of the window
