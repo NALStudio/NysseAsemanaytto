@@ -1,5 +1,6 @@
 import pygame
 import pygame.image
+import pygame.font
 import pygame.surface
 import pygame.transform
 from core.colors import Colors

@@ -27,16 +27,16 @@ def renderStoptime(px_size: Tuple[int, int], stoptime: Stoptime) -> pygame.Surfa
     surf.blit(line_number_render, (0, px_size[1] // 2 - line_number_render.get_height() // 2))
     surf.blit(line_headsign_render, (px_size[0] // 5, px_size[1] // 2 + line_number_render.get_height() // 2 - line_headsign_render.get_height()))
 
-    departure_time: datetime.time = datetime.datetime.utcfromtimestamp(stoptime.realtimeDeparture if stoptime.realtime else stoptime.scheduledDeparture).time()
+    departure: datetime.datetime = stoptime.realtimeDeparture if stoptime.realtime else stoptime.scheduledDeparture
     now = datetime.datetime.now()
-    if departure_time < now.time():
-        departure_time = now.time()
+    if departure < now:
+        departure = now
     stop_time_text: str
     if stoptime.realtime and stoptime.realtimeState != RealtimeState.SCHEDULED:
-        departure_diff = datetime.datetime.combine(now.date(), departure_time) - now
+        departure_diff = departure - now
         stop_time_text = str(round(departure_diff.seconds / 60))
     else:
-        stop_time_text = departure_time.strftime(core.renderers.time.TIMEFORMAT)
+        stop_time_text = departure.strftime(core.renderers.time.TIMEFORMAT)
 
     departure_render = font.render(stop_time_text, True, Colors.WHITE)
     surf.blit(departure_render, (px_size[0] - departure_render.get_width(), px_size[1] // 2 - departure_render.get_height() // 2))

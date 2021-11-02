@@ -2,18 +2,18 @@ from typing import Any, Dict, List, Optional, Sequence
 from digitransit.enums import Mode, RealtimeState
 import json
 import requests
+from datetime import datetime
 
 class Stoptime:
     def __init__(self, scheduledArrival: int, realtimeArrival: int, arrivalDelay: int, scheduledDeparture: int, realtimeDeparture: int, departureDelay: int, realtime: bool, realtimeState: str, serviceDay: int, headsign: str, trip: Dict[str, Any]) -> None:
-        self.scheduledArrival: int = scheduledArrival
-        self.realtimeArrival: int = realtimeArrival
+        self.scheduledArrival: datetime = datetime.fromtimestamp(serviceDay + scheduledArrival)
+        self.realtimeArrival: datetime = datetime.fromtimestamp(serviceDay + realtimeArrival)
         self.arrivalDelay: int = arrivalDelay
-        self.scheduledDeparture: int = scheduledDeparture
-        self.realtimeDeparture: int = realtimeDeparture
+        self.scheduledDeparture: datetime = datetime.fromtimestamp(serviceDay + scheduledDeparture)
+        self.realtimeDeparture: datetime = datetime.fromtimestamp(serviceDay + realtimeDeparture)
         self.departureDelay: int = departureDelay
         self.realtime: bool = realtime
         self.realtimeState: RealtimeState = RealtimeState(realtimeState)
-        self.serviceDay: int = serviceDay
         self.headsign: str = headsign
         self.trip: Trip = Trip(**trip)
 
