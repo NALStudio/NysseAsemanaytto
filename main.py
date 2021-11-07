@@ -4,6 +4,7 @@ from core.colors import Colors
 import core.renderers as renderers
 
 import threading
+import traceback
 import os
 import json
 
@@ -19,17 +20,32 @@ import pygame.surface
 import pygame.time
 import pygame.font
 
+class ConsoleColors:
+    BLACK = "\u001b[30m"
+    RED = "\u001b[31m"
+    GREEN = "\u001b[32m"
+    YELLOW = "\u001b[33m"
+    BLUE = "\u001b[34m"
+    MAGENTA = "\u001b[35m"
+    CYAN = "\u001b[36m"
+    WHITE = "\u001b[37m"
+    RESET = "\u001b[0m"
+
 print("Loading config...")
 with open("config.json") as f:
     config: Config = json.loads(f.read(), object_hook=lambda d: Config(**d))
 print("Config loaded.")
 
 print("Starting stop info thread...")
-
 def fetchInfo() -> Tuple[digitransit.routing.Stop, Optional[threading.Timer]]:
     global stopinfo, fetch_timer
-    print("Fetching stop info...")
-    stopinfo = digitransit.routing.get_stop_info(config.endpoint, config.stopcode, config.departure_count)
+    print(ConsoleColors.CYAN + "Fetching stop info..." + ConsoleColors.RESET)
+    try:
+        stopinfo = digitransit.routing.get_stop_info(config.endpoint, config.stopcode, config.departure_count)
+    except Exception as e:
+        print(ConsoleColors.RED + "An error occured while fetching stop info! Exception below:")
+        print(ConsoleColors.YELLOW + f"{type(e).__name__}: {e}")
+        print(traceback.format_exc() + ConsoleColors.RESET)
     if config.poll_rate > 0:
         fetch_timer = threading.Timer(config.poll_rate, fetchInfo)
         fetch_timer.start()
@@ -49,7 +65,7 @@ if config.fullscreen:
 display = pygame.display.set_mode(config.window_size, display_flags)
 clock = pygame.time.Clock()
 print("Window created.")
-print("Finished!")
+print(ConsoleColors.GREEN + "Finished!" + ConsoleColors.RESET)
 
 debug: bool = False
 debugFont: pygame.font.Font = pygame.font.Font("resources/fonts/Lato-Regular.ttf", 10)
