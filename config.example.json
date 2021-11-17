@@ -7,5 +7,6 @@
     "endpoint": "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql",
     "window_size": [360, 640],
     "fullscreen": false,
-    "framerate": -1
+    "framerate": -1,
+    "hide_mouse": true
 }

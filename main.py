@@ -19,6 +19,7 @@ import pygame.transform
 import pygame.surface
 import pygame.time
 import pygame.font
+import pygame.mouse
 
 class ConsoleColors:
     BLACK = "\u001b[30m"
@@ -65,6 +66,10 @@ if config.fullscreen:
 display = pygame.display.set_mode(config.window_size, display_flags)
 clock = pygame.time.Clock()
 print("Window created.")
+
+pygame.mouse.set_visible(not config.hide_mouse)
+print(f"Mouse visibility: {pygame.mouse.get_visible()}")
+
 print(ConsoleColors.GREEN + "Finished!" + ConsoleColors.RESET)
 
 debug: bool = False
