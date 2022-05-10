@@ -20,13 +20,15 @@ def renderStoptime(px_size: tuple[int, int], stoptime: Stoptime) -> pygame.Surfa
 
     surf = pygame.Surface(px_size, pygame.SRCALPHA)
 
-    line_number_render = font.render(str(stoptime.trip.routeShortName), True, Colors.WHITE)
+    assert stoptime.trip is not None
+    line_number_render = font.render(str(stoptime.trip.route.shortName), True, Colors.WHITE)
     line_headsign_render = font_small.render(str(stoptime.headsign), True, Colors.WHITE)
 
     surf.blit(line_number_render, (0, px_size[1] // 2 - line_number_render.get_height() // 2))
     surf.blit(line_headsign_render, (px_size[0] // 5, px_size[1] // 2 + line_number_render.get_height() // 2 - line_headsign_render.get_height()))
 
-    departure: datetime.datetime = stoptime.realtimeDeparture if stoptime.realtime else stoptime.scheduledDeparture
+    assert stoptime.realtimeDeparture is not None and stoptime.scheduledDeparture is not None
+    departure: datetime.datetime = stoptime.realtimeDeparture if stoptime.realtime == True else stoptime.scheduledDeparture
     now = datetime.datetime.now()
     if departure < now:
         departure = now

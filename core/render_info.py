@@ -2,7 +2,7 @@ import random
 import string
 from core import colors
 from core import config
-from embeds import Embed
+import embeds
 import digitransit.routing
 import traceback
 import threading
@@ -14,7 +14,7 @@ fetch_stopinfo_timer: threading.Timer | None
 def generate_thread_id(prefix: str, id_length: int = 4) -> str:
     return prefix + "".join(random.choices(string.ascii_uppercase + string.digits, k=id_length))
 
-def _fetch_stop_info() -> None:
+def _stop_info_update_digitransit() -> None:
     global stopinfo, fetch_stopinfo_timer
     print(colors.ConsoleColors.CYAN + "Fetching stop info..." + colors.ConsoleColors.RESET)
     try:
@@ -24,12 +24,15 @@ def _fetch_stop_info() -> None:
         print(colors.ConsoleColors.YELLOW + f"{type(e).__name__}: {e}")
         print(traceback.format_exc() + colors.ConsoleColors.RESET)
     if config.current.poll_rate > 0:
-        fetch_stopinfo_timer = threading.Timer(config.current.poll_rate, _fetch_stop_info)
+        fetch_stopinfo_timer = threading.Timer(config.current.poll_rate, _stop_info_update_digitransit)
         fetch_stopinfo_timer.name = generate_thread_id("StopInfoTimer_")
         fetch_stopinfo_timer.start()
 
+def _stop_info_update_siri() -> None:
+    raise NotImplementedError
+
 def start_stop_info_fetch() -> None:
-    _fetch_stop_info()
+    _stop_info_update_digitransit()
     try:
         _ = stopinfo
     except NameError:
@@ -37,11 +40,11 @@ def start_stop_info_fetch() -> None:
 #endregion
 
 #region Embed cycle
-embed: Embed | None
+embed: embeds.Embed | None
 embed_index: int = -1
 cycle_embed_timer: threading.Timer | None
 
-embed_cache: dict[int, Embed] = {}
+embed_cache: dict[int, embeds.Embed] = {}
 
 def _cycle_embed() -> None:
     global embed, embed_index, cycle_embed_timer
@@ -62,7 +65,7 @@ def _cycle_embed() -> None:
         prettyprint_args = ' '.join(embed_args)
         print(f"Loading new embed '{embed_name}' with arguments '{prettyprint_args}' into cache...")
 
-        valid_embeds: list[type[Embed]] = list(filter(lambda e: e.name() == embed_name, Embed.__subclasses__()))
+        valid_embeds: list[type[embeds.Embed]] = list(filter(lambda e: e.name() == embed_name, embeds.ALL_EMBEDS))
         assert len(valid_embeds) > 0, f"No embed named '{embed_name}' found!"
         assert len(valid_embeds) == 1, f"Multiple embeds named '{embed_name}' found!"
 

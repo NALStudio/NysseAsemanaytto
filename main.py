@@ -61,6 +61,7 @@ while running:
 
     #region Header
     header_rect = pygame.Rect(content_offset, content_offset, content_width, display_size[0] / 13)
+    assert render_info.stopinfo.vehicleMode is not None
     display.blit(renderers.header.renderHeader(header_rect.size, render_info.stopinfo.vehicleMode), header_rect.topleft)
     #endregion
 
@@ -97,12 +98,15 @@ while running:
         embed_y = last_stoptime_y + stoptime_height + (2 * content_spacing)
         embed_height = footer_rect.y - embed_y - content_spacing
         embed_rect = pygame.Rect(0, embed_y, display_size[0], embed_height)
-        if embed_surf is None or embed_surf.get_size() != embed_rect.size:
-            print("Creating embed surface...")
-            embed_surf = pygame.Surface(embed_rect.size)
-        embed_surf.fill(colors.Colors.BLACK)  # Theoritcally could be in an else statement because new surfaces are always black, but whatever...
-        render_info.embed.render(embed_surf)
-        display.blit(embed_surf, embed_rect.topleft)
+        if embed_rect.size[0] <= 0 or embed_rect.size[1] <= 0:
+            print("Window too small for embed!")
+        else:
+            if embed_surf is None or embed_surf.get_size() != embed_rect.size:
+                print("Creating embed surface...")
+                embed_surf = pygame.Surface(embed_rect.size)
+            embed_surf.fill(colors.Colors.BLACK)  # Theoritcally could be in an else statement because new surfaces are always black, but whatever...
+            render_info.embed.render(embed_surf)
+            display.blit(embed_surf, embed_rect.topleft)
     #endregion
 
     #region Debug
