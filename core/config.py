@@ -100,3 +100,6 @@ current: Config
 def init():
     global current
     current = Config.load("./config.json")
+
+def quit():
+    Config.save(current, "./config.json")

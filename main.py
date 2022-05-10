@@ -119,4 +119,5 @@ while running:
 
 #region Quitting
 render_info.stop_timers()
+config.quit()
 #endregion
