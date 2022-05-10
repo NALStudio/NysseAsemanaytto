@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Sequence
 from digitransit.enums import Mode, RealtimeState
 import json
 import requests
 from datetime import datetime
 
 class Stoptime:
-    def __init__(self, scheduledArrival: int, realtimeArrival: int, arrivalDelay: int, scheduledDeparture: int, realtimeDeparture: int, departureDelay: int, realtime: bool, realtimeState: str, serviceDay: int, headsign: str, trip: Dict[str, Any]) -> None:
+    def __init__(self, scheduledArrival: int, realtimeArrival: int, arrivalDelay: int, scheduledDeparture: int, realtimeDeparture: int, departureDelay: int, realtime: bool, realtimeState: str, serviceDay: int, headsign: str, trip: dict[str, Any]) -> None:
         self.scheduledArrival: datetime = datetime.fromtimestamp(serviceDay + scheduledArrival)
         self.realtimeArrival: datetime = datetime.fromtimestamp(serviceDay + realtimeArrival)
         self.arrivalDelay: int = arrivalDelay
@@ -18,7 +18,7 @@ class Stoptime:
         self.trip: Trip = Trip(**trip)
 
 class Stop:
-    def __init__(self, name: str, vehicleMode: str, stoptimesWithoutPatterns: Sequence[Dict[str, Any]]) -> None:
+    def __init__(self, name: str, vehicleMode: str, stoptimesWithoutPatterns: Sequence[dict[str, Any]]) -> None:
         self.name: str = name
         self.vehicleMode: Mode = Mode(vehicleMode)
 
@@ -28,7 +28,7 @@ class Trip:
     def __init__(self, routeShortName: str) -> None:
         self.routeShortName: str = routeShortName
 
-def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: Optional[int] = None) -> Stop:
+def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: int | None = None) -> Stop:
     query = """{
   stop(id: "tampere:STOPID") {
     name
@@ -50,7 +50,7 @@ def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: Optional[int
     }
   }
 }
-""".replace("STOPID", f"{stopcode:04d}").replace("NUMDEPARTS", f"(numberOfDepartures: {numberOfDepartures})" if numberOfDepartures != None else "")
+""".replace("STOPID", f"{stopcode:04d}").replace("NUMDEPARTS", f"(numberOfDepartures: {numberOfDepartures})" if numberOfDepartures is not None else "")
 
     jsonString = "{\"query\": " + json.dumps(query) + "}"
 
@@ -59,6 +59,6 @@ def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: Optional[int
         raise RuntimeError(f"Invalid response! Response below:\n{response.content}")
 
     d = json.loads(response.content)
-    if d["data"]["stop"] == None:
+    if d["data"]["stop"] is None:
       raise ValueError("Invalid stopcode!")
     return Stop(**d["data"]["stop"])

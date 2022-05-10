@@ -5,16 +5,15 @@ import core.renderers.time
 import pygame.font
 import datetime
 from digitransit.routing import Stoptime
-from typing import Optional, Tuple
 
-font_small: Optional[pygame.font.Font] = None
-font: Optional[pygame.font.Font] = None
-font_height: Optional[int] = None
+font_small: pygame.font.Font | None = None
+font: pygame.font.Font | None = None
+font_height: int | None = None
 
-def renderStoptime(px_size: Tuple[int, int], stoptime: Stoptime) -> pygame.Surface:
+def renderStoptime(px_size: tuple[int, int], stoptime: Stoptime) -> pygame.Surface:
     global font_small, font, font_height
     target_font_height: int = px_size[1] - round(px_size[1] / 3)
-    if font_small == None or font == None or font_height != target_font_height:
+    if font_small is None or font is None or font_height != target_font_height:
         font_height = target_font_height
         font = pygame.font.Font("resources/fonts/Lato-Bold.ttf", font_height)
         font_small = pygame.font.Font("resources/fonts/Lato-Regular.ttf", round(font_height * 0.9))

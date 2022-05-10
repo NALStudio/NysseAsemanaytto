@@ -2,9 +2,8 @@ from core.colors import NysseColors
 import pygame
 import pygame.gfxdraw
 import math
-from typing import List, Tuple
 
-def generateBackground(px_size: Tuple[int, int]):
+def generateBackground(px_size: tuple[int, int]):
     surf = pygame.Surface(px_size)
     surf.fill(NysseColors.KESKISININEN)
 
@@ -15,7 +14,7 @@ def generateBackground(px_size: Tuple[int, int]):
     sine_freq: float = 19.6452 / sine_rect.width
     sine_amp = 0.0155 * sine_rect.height
 
-    points: List[Tuple[float, float]] = []
+    points: list[tuple[float, float]] = []
     for iter_x in range(0, round(sine_length * 1.1), 1): # Added some extra x points to fix sine not being long enough
         p = _generateSine(iter_x, sine_freq, sine_amp)
         points.append(p)
@@ -40,11 +39,11 @@ def generateBackground(px_size: Tuple[int, int]):
     return surf
 
 
-def _generateSine(x: float, wave_frequency: float, wave_amplitude: float) -> Tuple[float, float]:
+def _generateSine(x: float, wave_frequency: float, wave_amplitude: float) -> tuple[float, float]:
     y = wave_amplitude * -math.cos(wave_frequency * x)
     return (x, y)
 
-def _rotatePoint(origin: Tuple[float, float], point: Tuple[float, float], angle: float) -> Tuple[float, float]:
+def _rotatePoint(origin: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
     """
     Rotate a point counterclockwise by a given angle around a given origin.
 

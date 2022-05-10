@@ -1,76 +1,42 @@
-from typing import Optional, Tuple
-from core.config import Config
-from core.colors import Colors
-import core.renderers as renderers
+from core import colors
+from core import renderers
+from core import config
+from core import render_info
 
-import threading
-import traceback
 import os
-import json
-
-import digitransit.routing
-import digitransit.enums
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-import pygame.display
-import pygame.image
-import pygame.transform
-import pygame.surface
-import pygame.time
-import pygame.font
-import pygame.mouse
 
-class ConsoleColors:
-    BLACK = "\u001b[30m"
-    RED = "\u001b[31m"
-    GREEN = "\u001b[32m"
-    YELLOW = "\u001b[33m"
-    BLUE = "\u001b[34m"
-    MAGENTA = "\u001b[35m"
-    CYAN = "\u001b[36m"
-    WHITE = "\u001b[37m"
-    RESET = "\u001b[0m"
 
 print("Loading config...")
-with open("config.json") as f:
-    config: Config = json.loads(f.read(), object_hook=lambda d: Config(**d))
+config.init()
 print("Config loaded.")
 
 print("Starting stop info thread...")
-def fetchInfo() -> Tuple[digitransit.routing.Stop, Optional[threading.Timer]]:
-    global stopinfo, fetch_timer
-    print(ConsoleColors.CYAN + "Fetching stop info..." + ConsoleColors.RESET)
-    try:
-        stopinfo = digitransit.routing.get_stop_info(config.endpoint, config.stopcode, config.departure_count)
-    except Exception as e:
-        print(ConsoleColors.RED + "An error occured while fetching stop info! Exception below:")
-        print(ConsoleColors.YELLOW + f"{type(e).__name__}: {e}")
-        print(traceback.format_exc() + ConsoleColors.RESET)
-    if config.poll_rate > 0:
-        fetch_timer = threading.Timer(config.poll_rate, fetchInfo)
-        fetch_timer.start()
-    return stopinfo, fetch_timer
-stopinfo: digitransit.routing.Stop
-fetch_timer: Optional[threading.Timer]
-stopinfo, fetch_timer = fetchInfo()
-print("Thread started.")
+render_info.start_stop_info_fetch()
+print("Stop info thread started.")
+
+print("Starting embeds cycling thread...")
+render_info.start_embed_cycling()
+print("Embeds cycling thread started.")
 
 print("Creating window...")
 pygame.init()
 pygame.display.set_caption("Nysse Pysäkkinäyttö")
 pygame.display.set_icon(pygame.image.load("resources/textures/icon.png"))
 display_flags = pygame.RESIZABLE
-if config.fullscreen:
+if config.current.fullscreen:
     display_flags |= pygame.FULLSCREEN
-display = pygame.display.set_mode(config.window_size, display_flags)
+display = pygame.display.set_mode(config.current.window_size, display_flags)
+embed_surf: pygame.Surface | None = None
 clock = pygame.time.Clock()
 print("Window created.")
 
-pygame.mouse.set_visible(not config.hide_mouse)
+pygame.mouse.set_visible(not config.current.hide_mouse)
 print(f"Mouse visibility: {pygame.mouse.get_visible()}")
 
-print(ConsoleColors.GREEN + "Finished!" + ConsoleColors.RESET)
+print(colors.ConsoleColors.GREEN + "Finished!" + colors.ConsoleColors.RESET)
 
 debug: bool = False
 debugFont: pygame.font.Font = pygame.font.Font("resources/fonts/Lato-Regular.ttf", 10)
@@ -95,25 +61,27 @@ while running:
 
     #region Header
     header_rect = pygame.Rect(content_offset, content_offset, content_width, display_size[0] / 13)
-    display.blit(renderers.header.renderHeader(header_rect.size, stopinfo.vehicleMode), header_rect.topleft)
+    display.blit(renderers.header.renderHeader(header_rect.size, render_info.stopinfo.vehicleMode), header_rect.topleft)
     #endregion
 
     #region Stop Info
     stop_info_rect = pygame.Rect(content_offset, header_rect.bottom + content_spacing * 2, content_width, display_size[0] / 9)
-    display.blit(renderers.stop_info.renderStopInfo(stop_info_rect.size, stopinfo), stop_info_rect.topleft)
+    display.blit(renderers.stop_info.renderStopInfo(stop_info_rect.size, render_info.stopinfo), stop_info_rect.topleft)
     #endregion
 
     #region Stoptimes
     stoptime_height = stop_info_rect.height
-    stoptime_y = 0
+    stoptime_y_index = 0
     stoptime_i = 0
-    while stoptime_i < len(stopinfo.stoptimes) and ((stoptime_y < config.visible_count) if config.visible_count != None else True):
-        stoptime = stopinfo.stoptimes[stoptime_i]
-        if stoptime.headsign not in config.ignore_headsigns:
-            stoptime_rect = pygame.Rect(content_offset, stop_info_rect.bottom + content_spacing + stoptime_y * (content_spacing / 2 + stoptime_height), content_width, stoptime_height)
-            display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, stopinfo.stoptimes[stoptime_i]), stoptime_rect.topleft)
+    last_stoptime_y = -1
+    while stoptime_i < len(render_info.stopinfo.stoptimes) and ((stoptime_y_index < config.current.visible_count) if config.current.visible_count is not None else True):
+        stoptime = render_info.stopinfo.stoptimes[stoptime_i]
+        if stoptime.headsign not in config.current.ignore_headsigns:
+            last_stoptime_y = stop_info_rect.bottom + content_spacing + stoptime_y_index * (content_spacing / 2 + stoptime_height)
+            stoptime_rect = pygame.Rect(content_offset, last_stoptime_y, content_width, stoptime_height)
+            display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, render_info.stopinfo.stoptimes[stoptime_i]), stoptime_rect.topleft)
 
-            stoptime_y += 1
+            stoptime_y_index += 1
 
         stoptime_i += 1
     #endregion
@@ -124,19 +92,31 @@ while running:
     display.blit(renderers.footer.renderFooter(footer_rect.size), footer_rect.topleft)
     #endregion
 
+    #region Embeds
+    if render_info.embed is not None:
+        embed_y = last_stoptime_y + stoptime_height + (2 * content_spacing)
+        embed_height = footer_rect.y - embed_y - content_spacing
+        embed_rect = pygame.Rect(0, embed_y, display_size[0], embed_height)
+        if embed_surf is None or embed_surf.get_size() != embed_rect.size:
+            print("Creating embed surface...")
+            embed_surf = pygame.Surface(embed_rect.size)
+        embed_surf.fill(colors.Colors.BLACK)  # Theoritcally could be in an else statement because new surfaces are always black, but whatever...
+        render_info.embed.render(embed_surf)
+        display.blit(embed_surf, embed_rect.topleft)
+    #endregion
+
     #region Debug
     if debug:
-        display.blit(debugFont.render(format(clock.get_fps(), ".3f"), True, Colors.WHITE), (0, 0))
+        display.blit(debugFont.render(format(clock.get_fps(), ".3f"), True, colors.Colors.WHITE), (0, 0))
     #endregion
 
     # NOTE: Assuming no animations are present which need accurate framerate timing and not clock.tick inaccuracies.
     # NOTE: Before pygame.display.flip, because input latency is not a worry. If we would take any inputs, we should put this after display flip.
-    clock.tick(config.framerate)
+    clock.tick(config.current.framerate)
 
     pygame.display.flip()
-    display.fill(Colors.BLACK)
+    display.fill(colors.Colors.BLACK)
 
 #region Quitting
-if fetch_timer != None:
-    fetch_timer.cancel()
+render_info.stop_timers()
 #endregion

@@ -1,10 +1,9 @@
-from typing import Optional
 from digitransit.enums import Mode
 import pygame
 import pygame.surface
 import pygame.image
 
-def load_pictogram_by_mode(mode: Mode) -> Optional[pygame.surface.Surface]:
+def load_pictogram_by_mode(mode: Mode) -> pygame.surface.Surface | None:
     lookup = {
         Mode.BUS: "bussi.png",
         Mode.BICYCLE: "kaupunkipyora.png",
