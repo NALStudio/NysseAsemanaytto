@@ -4,21 +4,21 @@ import pygame.font
 import pygame.surface
 import pygame.transform
 from core.colors import Colors
+from core import font_helper
 
-font: pygame.font.Font | None = None
-font_height: int | None = None
+nyssefi_font_height: int | None = None
 nyssefi_text: pygame.surface.Surface | None = None
 
 footer_pictograms: pygame.surface.Surface | None = None
 
 def renderFooter(px_size: tuple[int, int]) -> pygame.Surface:
-    global font, font_height, footer_pictograms, nyssefi_text
-    target_font_height: int = px_size[1]
-    if font is None or target_font_height != font_height or nyssefi_text is None:
-        print("Loading new font for stop info rendering...")
-        font_height = target_font_height
-        font = pygame.font.Font("resources/fonts/Lota-Grotesque-Bold.otf", font_height)
-        nyssefi_text = font.render("nysse.fi", True, Colors.WHITE)
+    global nyssefi_font_height, footer_pictograms, nyssefi_text
+    target_nyysefi_font_height: int = px_size[1]
+    if nyssefi_text is None or target_nyysefi_font_height != nyssefi_font_height:
+        print("Loading new 'nysse.fi' for stop info rendering...")
+        nyssefi_font_height = target_nyysefi_font_height
+        nyssefi_font = pygame.font.Font("resources/fonts/Lota-Grotesque-Bold.otf", nyssefi_font_height)
+        nyssefi_text = nyssefi_font.render("nysse.fi", True, Colors.WHITE)
 
     footer_pictograms_height: float = px_size[1] * 0.7
     if footer_pictograms is None or footer_pictograms.get_height() != round(footer_pictograms_height):

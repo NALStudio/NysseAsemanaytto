@@ -1,28 +1,23 @@
 from digitransit.enums import RealtimeState
 from core.colors import Colors
+from core import font_helper
 import pygame
 import core.renderers.time
 import pygame.font
 import datetime
 from digitransit.routing import Stoptime
 
-font_small: pygame.font.Font | None = None
-font: pygame.font.Font | None = None
-font_height: int | None = None
+font_bold: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.ttf")
+font_regular: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf")
 
 def renderStoptime(px_size: tuple[int, int], stoptime: Stoptime) -> pygame.Surface:
-    global font_small, font, font_height
-    target_font_height: int = px_size[1] - round(px_size[1] / 3)
-    if font_small is None or font is None or font_height != target_font_height:
-        font_height = target_font_height
-        font = pygame.font.Font("resources/fonts/Lato-Bold.ttf", font_height)
-        font_small = pygame.font.Font("resources/fonts/Lato-Regular.ttf", round(font_height * 0.9))
+    font_height: int = px_size[1] - round(px_size[1] / 3)
 
     surf = pygame.Surface(px_size, pygame.SRCALPHA)
 
     assert stoptime.trip is not None
-    line_number_render = font.render(str(stoptime.trip.route.shortName), True, Colors.WHITE)
-    line_headsign_render = font_small.render(str(stoptime.headsign), True, Colors.WHITE)
+    line_number_render = font_bold.get_size(font_height).render(str(stoptime.trip.route.shortName), True, Colors.WHITE)
+    line_headsign_render = font_regular.get_size(round(font_height * 0.9)).render(str(stoptime.headsign), True, Colors.WHITE)
 
     surf.blit(line_number_render, (0, px_size[1] // 2 - line_number_render.get_height() // 2))
     surf.blit(line_headsign_render, (px_size[0] // 5, px_size[1] // 2 + line_number_render.get_height() // 2 - line_headsign_render.get_height()))
@@ -39,7 +34,7 @@ def renderStoptime(px_size: tuple[int, int], stoptime: Stoptime) -> pygame.Surfa
     else:
         stop_time_text = departure.strftime(core.renderers.time.TIMEFORMAT)
 
-    departure_render = font.render(stop_time_text, True, Colors.WHITE)
+    departure_render = font_bold.get_size(font_height).render(stop_time_text, True, Colors.WHITE)
     surf.blit(departure_render, (px_size[0] - departure_render.get_width(), px_size[1] // 2 - departure_render.get_height() // 2))
 
     return surf

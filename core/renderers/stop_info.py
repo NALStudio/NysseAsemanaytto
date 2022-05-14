@@ -1,5 +1,6 @@
 from digitransit.routing import Stop
 from core.colors import Colors
+from core import font_helper
 import pygame
 import pygame.draw
 import pygame.font
@@ -7,18 +8,13 @@ import pygame.image
 import pygame.surface
 import pygame.transform
 
-font: pygame.font.Font | None = None
-font_height: int | None = None
+font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.ttf", "stop info rendering")
 
 stop_icon: pygame.surface.Surface | None = None
 
 def renderStopInfo(px_size: tuple[int, int], stopinfo: Stop) -> pygame.Surface:
-    global font, font_height, stop_icon
-    target_font_height: int = px_size[1] - round(px_size[1] / 3)
-    if font is None or target_font_height != font_height:
-        print("Loading new font for stop info rendering...")
-        font_height = target_font_height
-        font = pygame.font.Font("resources/fonts/Lato-Bold.ttf", font_height)
+    global font, stop_icon
+    font_height: int = px_size[1] - round(px_size[1] / 3)
 
     target_icon_size: int = round(px_size[1] / 1.75)
     if stop_icon is None or stop_icon.get_height() != target_icon_size:
@@ -29,7 +25,7 @@ def renderStopInfo(px_size: tuple[int, int], stopinfo: Stop) -> pygame.Surface:
     surf = pygame.Surface(px_size, pygame.SRCALPHA)
     # DEBUG: surf.fill(Colors.RED)
 
-    stopnamernd = font.render(stopinfo.name, True, Colors.WHITE)
+    stopnamernd = font.get_size(font_height).render(stopinfo.name, True, Colors.WHITE)
     surf.blit(stopnamernd, (0, px_size[1] // 2 - stopnamernd.get_height() // 2))
     surf.blit(stop_icon, (px_size[0] - stop_icon.get_width(), px_size[1] // 2 - stop_icon.get_height() // 2))
 

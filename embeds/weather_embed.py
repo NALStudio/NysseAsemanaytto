@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import embeds
-from core import weather_handler, colors
+from core import weather_handler, colors, font_helper
 import pygame
 import time
 from typing import Iterable
@@ -18,8 +18,7 @@ class WeatherEmbed(embeds.Embed):
 
         self.last_update: float | None = None
         self.weather: list[weather_handler.Weather] | None = None
-        self.time_font: pygame.font.Font | None = None
-        self.time_font_height: int | None = None
+        self.time_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "weather embed time rendering")
         self.hour_count: int = 12
 
     def _set_weather(self, weather: Iterable[weather_handler.Weather]):
@@ -57,16 +56,12 @@ class WeatherEmbed(embeds.Embed):
             surface.blit(common_surf, (round(i * stat_width), 0))
 
     def render_weather_stat(self, surface: pygame.Surface, weather: weather_handler.Weather):
-        target_time_font_height: int = round(surface.get_height() / 7)
-        if self.time_font is None or self.time_font_height != target_time_font_height:
-            print("Loading new time font...")
-            self.time_font = pygame.font.Font("resources/fonts/Lato-Regular.ttf", target_time_font_height)
-            self.time_font_height = target_time_font_height
+        time_font_height: int = round(surface.get_height() / 7)
 
         size = surface.get_size()
         center = (size[0] / 2, size[1] / 2)
 
-        degree = self.time_font.render(f"{weather.temperature}°C", True, colors.Colors.BLACK)
+        degree = self.time_font.get_size(time_font_height).render(f"{weather.temperature}°C", True, colors.Colors.BLACK)
         surface.blit(degree, (round(center[0] - degree.get_width() / 2), round(center[1])))
 
         symbol = weather_handler.get_weather_symbol(weather.symbol_id)
@@ -74,7 +69,7 @@ class WeatherEmbed(embeds.Embed):
         symbol = pygame.transform.smoothscale(symbol, (symbol_size, symbol_size))
         surface.blit(symbol, (round(center[0] - symbol_size / 2), round(center[1] - symbol_size)))
 
-        time = self.time_font.render((weather.time_local).strftime("%H:%M"), True, colors.Colors.BLACK)
+        time = self.time_font.get_size(time_font_height).render((weather.time_local).strftime("%H:%M"), True, colors.Colors.BLACK)
         surface.blit(time, (round(center[0] - time.get_width() / 2), round(center[1] + symbol_size - time.get_height())))
 
     @staticmethod
