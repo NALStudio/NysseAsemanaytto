@@ -94,8 +94,11 @@ class AlertEmbed(embeds.Embed):
         if self.remove_duplicates: # Remove duplicates by checking if the descriptions (the only visible part basically) are the same
             filtered_alerts = [alert for alert_index, alert in enumerate(filtered_alerts) if all(alert.alertDescriptionText != other.alertDescriptionText for other in filtered_alerts[:alert_index])]
 
+        font = alert_font.get_size(round(surface.get_height() / 10))
+
         if len(filtered_alerts) < 1:
-            # Add a text of no alerts or something
+            no_alerts = font.render("Ei häiriöitä Nyssen toiminnassa.", True, colors.Colors.BLACK)
+            surface.blit(no_alerts, (surface.get_width() / 2 - no_alerts.get_width() / 2, surface.get_height() / 2 - no_alerts.get_height() / 2))
             return
 
         # DEBUG:
@@ -111,7 +114,6 @@ class AlertEmbed(embeds.Embed):
         self.alert_index %= len(filtered_alerts)
         alert = filtered_alerts[self.alert_index]
 
-        font = alert_font.get_size(round(surface.get_height() / 10))
         pages: list[font_helper.Page] = list(font_helper.pagination(font, alert.alertDescriptionText, surface.get_size()))
 
         time_per_page: float = self.duration() / len(pages)
