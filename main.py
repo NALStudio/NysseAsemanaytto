@@ -2,6 +2,7 @@ from core import colors
 from core import renderers
 from core import config
 from core import render_info
+from core import font_helper
 
 import os
 
@@ -39,7 +40,7 @@ print(f"Mouse visibility: {pygame.mouse.get_visible()}")
 print(colors.ConsoleColors.GREEN + "Finished!" + colors.ConsoleColors.RESET)
 
 debug: bool = False
-debugFont: pygame.font.Font = pygame.font.Font("resources/fonts/Lato-Regular.ttf", 10)
+debugFont: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "debug")
 
 running: bool = True
 while running:
@@ -111,7 +112,7 @@ while running:
 
     #region Debug
     if debug:
-        display.blit(debugFont.render(format(clock.get_fps(), ".3f"), True, colors.Colors.WHITE), (0, 0))
+        display.blit(debugFont.get_size(10).render(format(clock.get_fps(), ".3f"), True, colors.Colors.WHITE), (0, 0))
     #endregion
 
     # NOTE: Assuming no animations are present which need accurate framerate timing and not clock.tick inaccuracies.
