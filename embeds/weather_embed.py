@@ -37,6 +37,9 @@ class WeatherEmbed(embeds.Embed):
             # because accuracy is not really important
             # and it works nicer with the None check.
 
+    def on_disable(self):
+        pass
+
     def render(self, surface: pygame.Surface):
         BACKGROUND_COLOR = colors.Colors.WHITE
 

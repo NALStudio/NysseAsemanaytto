@@ -3,47 +3,133 @@ from __future__ import annotations
 import embeds
 import digitransit.routing
 import time
-from core import colors, config
+from core import colors, config, font_helper, render_info
 import pygame
+
+alert_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "alert rendering")
 
 class AlertEmbed(embeds.Embed):
     def __init__(self, *args: str):
-        assert len(args) == 3, "Invalid argument count!"
+        assert len(args) >= 3, "Invalid argument count!"
 
         self.poll_rate: int = int(args[0])
         assert isinstance(self.poll_rate, int), "First argument must be an integer defining alert poll rate! (Recommended: 300)"
 
-        self.include_global: bool = bool(args[1])
-        assert isinstance(self.include_global, bool), "Second argument must be a boolean defining if global alerts should be included!"
+        self.include_global: bool = bool(int(args[1]))
+        assert isinstance(self.include_global, bool), "Second argument must be an integer 0 or 1 defining if global alerts should be included!"
 
-        self.shortname_whitelist: list[str] | None = args[2].split(",") if args[2] != "..." else None
-        assert self.shortname_whitelist is None or isinstance(self.shortname_whitelist, list), "Third argument must be a list of strings defining alert shortnames to include! (If '...', all alerts are included)"
+        self.include_local: bool = bool(int(args[2]))
+        assert isinstance(self.include_local, bool), "Third argument must be an integer 0 or 1 defining if alerts of routes which include displayed stop should be included!"
+
+        self.remove_duplicates: bool = False
+        if len(args) >= 4:
+            self.remove_duplicates = bool(int(args[3]))
+            assert isinstance(self.remove_duplicates, bool), "Fourth argument must be an integer 0 or 1 defining if duplicate alerts should be removed!"
 
 
         self.alerts: list[digitransit.routing.Alert] | None = None
+        self.alert_index: int = 0
         self.last_update: float | None = None
+        self.enable_time: float | None = None
 
     def on_enable(self):
         now_update = time.process_time()
+        self.enable_time = now_update
+
         if self.last_update is None or now_update - self.last_update > self.poll_rate:
             print(f"Loading new alert data...")
 
-            self.alerts = digitransit.routing.get_alerts(config.current.endpoint)
+            self.alerts = digitransit.routing.get_alerts(config.current.endpoint, ("tampere",)) # Optimally would be on a separate thread, but on_enable is already threaded after the first call so whatever
 
             self.last_update = now_update
             # Not adding difference but rather setting the value
             # because accuracy is not really important
             # and it works nicer with the None check.
 
+    def on_disable(self):
+        self.alert_index += 1
+        self.enable_time = None # Probably not needed, but if something goes wrong this will force a crash instead of running half broken
+
+    def _alert_meets_filter_requirements(self, alert: digitransit.routing.Alert) -> bool:
+        def alert_is_global(alert: digitransit.routing.Alert) -> bool:
+            return alert.route is None and alert.stop is None
+
+        if not self.include_global and alert_is_global(alert): # Return false if global alerts are not included
+            return False # Alert is global, False is returned
+        if not self.include_local: # Return false if local alerts are not included
+            if not alert_is_global(alert):
+                return False # Alert is local, False is returned
+        else: # Local alerts are included
+            if alert_is_global(alert): # Global alert handling is handled earlier. If it is global, it must be valid.
+                return True # Alert is global, True is returned
+
+            rendered_stop_gtfsId = render_info.get_stop_gtfsId()
+
+            # Alert is local
+            if alert.stop is not None and alert.stop.gtfsId != rendered_stop_gtfsId: # Return false if the alert has defined a stop that is not the same as the displayed stop
+                return False # Alert is local and it does not apply to the displayed stop, False is returned
+
+            assert alert.route is not None # This check is handled by global check
+            if alert.route.stops is None: # No stops defined for the route. Return false with error.
+                print(colors.ConsoleColors.RED + "No stops defined for alert's route!" + colors.ConsoleColors.RESET)
+                return False # Insufficient route info, False is returned
+
+            if all(stop.gtfsId != rendered_stop_gtfsId for stop in alert.route.stops): # Return false if the alert's route does not include the displayed stop
+                return False # Alert is local and it does not apply to the displayed stop, False is returned
+
+        return True # Passed all checks
+
     def render(self, surface: pygame.Surface):
         BACKGROUND_COLOR = colors.Colors.WHITE
 
         surface.fill(BACKGROUND_COLOR)
 
-        if self.alerts is None:
+        filtered_alerts: list[digitransit.routing.Alert] | None = self.alerts # Value is set before if-check due to threading
+        if filtered_alerts is None:
             return
 
-        # render it here pls
+        filtered_alerts = [alert for alert in filtered_alerts if self._alert_meets_filter_requirements(alert)]
+
+        # There seem to be duplicates during the 2022 Finnish Ice Hockey World Championship, but I don't think that normally happens...
+        if self.remove_duplicates: # Remove duplicates by checking if the descriptions (the only visible part basically) are the same
+            filtered_alerts = [alert for alert_index, alert in enumerate(filtered_alerts) if all(alert.alertDescriptionText != other.alertDescriptionText for other in filtered_alerts[:alert_index])]
+
+        if len(filtered_alerts) < 1:
+            # Add a text of no alerts or something
+            return
+
+        # DEBUG:
+        # print("=" * 1000)
+        # for alert in filtered_alerts:
+        #     print("=" * 20)
+        #     print(alert.alertHeaderText)
+        #     print(f"{alert.route.shortName} | {alert.route.longName}" if alert.route is not None else None)
+        #     if alert.stop is not None:
+        #         print(f"{alert.stop.gtfsId}: {alert.stop.name}")
+        # print("=" * 1000)
+
+        self.alert_index %= len(filtered_alerts)
+        alert = filtered_alerts[self.alert_index]
+
+        font = alert_font.get_size(round(surface.get_height() / 10))
+        pages: list[font_helper.Page] = list(font_helper.pagination(font, alert.alertDescriptionText, surface.get_size()))
+
+        time_per_page: float = self.duration() / len(pages)
+        time_elapsed: float
+        if self.enable_time is not None: # FUCK THREADING
+            time_elapsed = time.process_time() - self.enable_time
+        else:
+            print(colors.ConsoleColors.YELLOW + "Alert embed enable time is None!" + colors.ConsoleColors.RESET)
+            time_elapsed = time_per_page * len(pages)
+
+        page_index = int(time_elapsed / time_per_page)
+        if page_index >= len(pages): # It is possible that the page index is greater than the number of pages at the end of the embed cycle.
+            if page_index > len(pages): # If the page index is 2 or more over the amount of pages, warn the user.
+                print(colors.ConsoleColors.YELLOW + f"Alert page index {page_index - (len(pages) - 1)} over the maximum page index." + colors.ConsoleColors.RESET)
+            page_index = len(pages) - 1
+
+        page_render = font_helper.render_page(font, pages[page_index], True, colors.Colors.BLACK)
+        surface.blit(page_render, (0, 0))
 
     @staticmethod
     def name() -> str:

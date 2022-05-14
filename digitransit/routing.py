@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generator, Sequence, TypeVar
+from typing import Any, Callable, Generator, Iterable, Sequence, TypeVar
 from digitransit.enums import Mode, RealtimeState
 import json
 import requests
@@ -6,6 +6,14 @@ from datetime import datetime
 
 _T = TypeVar("_T")
 
+
+class Alert:
+    def __init__(self, feed: str | None, alertHeaderText: str | None, alertDescriptionText: str, route: dict[str, Any] | None, stop: dict[str, Any] | None) -> None:
+        self.feed: str | None = feed
+        self.alertHeaderText: str | None = alertHeaderText
+        self.alertDescriptionText: str = alertDescriptionText
+        self.route: Route | None = Route(**route) if route is not None else None
+        self.stop: Stop | None = Stop(**stop) if stop is not None else None
 
 class Stoptime:
     def __init__(self, scheduledArrival: int | None, realtimeArrival: int | None, arrivalDelay: int | None, scheduledDeparture: int | None, realtimeDeparture: int | None, departureDelay: int | None, realtime: bool | None, realtimeState: str | None, serviceDay: int | None, headsign: str | None, trip: dict[str, Any] | None) -> None:
@@ -21,33 +29,36 @@ class Stoptime:
         self.trip: Trip | None = Trip(**trip) if trip is not None else None
 
 class Stop:
-    def __init__(self, name: str, vehicleMode: str | None, stoptimesWithoutPatterns: Sequence[dict[str, Any]]) -> None:
+    def __init__(self, gtfsId: str, name: str, vehicleMode: str | None, stoptimesWithoutPatterns: Sequence[dict[str, Any]] | None = None) -> None:
+        self.gtfsId: str = gtfsId
         self.name: str = name
         self.vehicleMode: Mode | None = Mode(vehicleMode) if vehicleMode is not None else None
 
-        self.stoptimes: list[Stoptime] = [Stoptime(**stoptime) for stoptime in stoptimesWithoutPatterns]
+        self.stoptimes: list[Stoptime] | None = None
+        if stoptimesWithoutPatterns is not None:
+            self.stoptimes = [Stoptime(**stoptime) for stoptime in stoptimesWithoutPatterns]
 
 class Route:
-    def __init__(self, shortName: str | None, longName: str | None, mode: str | None) -> None:
+    def __init__(self, gtfsId: str, shortName: str | None, longName: str | None, mode: str | None, stops: Sequence[dict[str, Any]] | None = None) -> None:
+        self.gtfsId: str = gtfsId
         self.shortName: str | None = shortName
         self.longName: str | None = longName
         self.mode: Mode | None = Mode(mode) if mode is not None else None
 
+        self.stops: list[Stop] | None = None
+        if stops is not None:
+            self.stops = [Stop(**stop) for stop in stops]
+
 class Trip:
-    def __init__(self, route: dict[str, Any]) -> None:
+    def __init__(self, gtfsId: str, route: dict[str, Any]) -> None:
+        self.gtfsId: str = gtfsId
         self.route: Route = Route(**route)
 
-class Alert:
-    def __init__(self, feed: str | None, alertHeaderText: str | None, alertDescriptionText: str, route: dict[str, Any] | None) -> None:
-        self.feed: str | None = feed
-        self.alertHeaderText: str | None = alertHeaderText
-        self.alertDescriptionText: str = alertDescriptionText
-        self.route: Route | None = Route(**route) if route is not None else None
 
-
-def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: int | None = None) -> Stop:
+def get_stop_info(endpoint: str, stop_gtfsId: str, numberOfDepartures: int | None = None) -> Stop:
     query = """{
-  stop(id: "tampere:STOPID") {
+  stop(id: "STOPID") {
+    gtfsId
     name
     vehicleMode
     stoptimesWithoutPatternsNUMDEPARTS {
@@ -62,7 +73,9 @@ def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: int | None =
       serviceDay
       headsign
       trip {
+        gtfsId
         route {
+          gtfsId
           shortName
           longName
           mode
@@ -71,24 +84,35 @@ def get_stop_info(endpoint: str, stopcode: int, numberOfDepartures: int | None =
     }
   }
 }
-""".replace("STOPID", f"{stopcode:04d}").replace("NUMDEPARTS", f"(numberOfDepartures: {numberOfDepartures})" if numberOfDepartures is not None else "")
+""".replace("STOPID", stop_gtfsId).replace("NUMDEPARTS", f"(numberOfDepartures: {numberOfDepartures})" if numberOfDepartures is not None else "")
 
     return _make_request(endpoint, query, "stop", Stop)
 
-def get_alerts(endpoint: str) -> list[Alert]:
+def get_alerts(endpoint: str, feeds: list[str] | tuple[str, ...]) -> list[Alert]: # Apparently Sequence[str] allows the user to put in a bare string
     query = """{
-  alerts(feeds:["tampere"]) {
+  alerts(feeds: [FEEDS]) {
     feed
     alertHeaderText
     alertDescriptionText
+    stop {
+      gtfsId
+      name
+      vehicleMode
+    }
     route {
+      gtfsId
       shortName
       longName
       mode
+      stops {
+        gtfsId
+        name
+        vehicleMode
+      }
     }
   }
 }
-"""
+""".replace("FEEDS", ",".join(f"\"{feed}\"" for feed in feeds))
 
     def constructor(data: dict[str, list[dict[str, Any]]]) -> list[Alert]:
         return [Alert(**params) for params in data["alerts"]]
@@ -107,6 +131,6 @@ def _make_request(endpoint: str, query: str, expected_data_key: str | None, cons
     data = d["data"]
     keydata = d if expected_data_key is None else data[expected_data_key]
     if keydata is None:
-      raise ValueError(f"No data found! Expected data with key: {expected_data_key}")
+      raise ValueError(f"No data found! Expected data with key: {expected_data_key}. Response below:\n{response.content}")
 
     return constructor(**keydata)

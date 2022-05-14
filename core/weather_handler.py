@@ -3,7 +3,7 @@ import datetime
 import threading
 import time as time_module
 import fmiopendata.multipoint
-from typing import Any, Callable, Generator
+from typing import Any, Callable, Generator, Iterable
 
 import pygame
 
@@ -47,7 +47,7 @@ class _WeatherRequestProvider: # HACK: Passing arguments on thread start ignores
         self.params: WeatherFetchParams = params
         self.on_finish: Callable[[tuple[Weather]], Any] = on_finish
 
-    def _parse_multipoint(self, mp: fmiopendata.multipoint.MultiPoint) -> Generator[Weather, None, None]:
+    def _parse_multipoint(self, mp: fmiopendata.multipoint.MultiPoint) -> Iterable[Weather]:
         datapoints = list(mp.data.items())
 
         for dp in datapoints:

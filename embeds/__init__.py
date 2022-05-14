@@ -1,14 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-import datetime
-import time
-import digitransit.routing
-from typing import Iterable
-
 import pygame
-from core import weather_handler
-from core import colors
-from core import config
 
 class Embed(ABC):
     def __init__(self, *args: str):
@@ -16,6 +8,10 @@ class Embed(ABC):
 
     @abstractmethod
     def on_enable(self):
+        pass
+
+    @abstractmethod
+    def on_disable(self):
         pass
 
     @abstractmethod

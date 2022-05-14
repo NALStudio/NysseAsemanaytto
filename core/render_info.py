@@ -8,6 +8,9 @@ import traceback
 import threading
 
 #region Stop info
+def get_stop_gtfsId() -> str:
+    return f"tampere:{config.current.stopcode:04d}"
+
 stopinfo: digitransit.routing.Stop
 fetch_stopinfo_timer: threading.Timer | None
 
@@ -18,7 +21,7 @@ def _stop_info_update_digitransit() -> None:
     global stopinfo, fetch_stopinfo_timer
     print(colors.ConsoleColors.CYAN + "Fetching stop info..." + colors.ConsoleColors.RESET)
     try:
-        stopinfo = digitransit.routing.get_stop_info(config.current.endpoint, config.current.stopcode, config.current.departure_count)
+        stopinfo = digitransit.routing.get_stop_info(config.current.endpoint, get_stop_gtfsId(), config.current.departure_count)
     except Exception as e:
         print(colors.ConsoleColors.RED + "An error occured while fetching stop info! Exception below:")
         print(colors.ConsoleColors.YELLOW + f"{type(e).__name__}: {e}")
@@ -27,9 +30,6 @@ def _stop_info_update_digitransit() -> None:
         fetch_stopinfo_timer = threading.Timer(config.current.poll_rate, _stop_info_update_digitransit)
         fetch_stopinfo_timer.name = generate_thread_id("StopInfoTimer_")
         fetch_stopinfo_timer.start()
-
-def _stop_info_update_siri() -> None:
-    raise NotImplementedError
 
 def start_stop_info_fetch() -> None:
     _stop_info_update_digitransit()
@@ -40,7 +40,7 @@ def start_stop_info_fetch() -> None:
 #endregion
 
 #region Embed cycle
-embed: embeds.Embed | None
+embed: embeds.Embed | None = None
 embed_index: int = -1
 cycle_embed_timer: threading.Timer | None
 
@@ -51,7 +51,6 @@ def _cycle_embed() -> None:
     print(colors.ConsoleColors.MAGENTA + "Switching embed..." + colors.ConsoleColors.RESET)
     if len(config.current.enabled_embeds) < 1:
         print(colors.ConsoleColors.MAGENTA + "No embeds enabled! Cancelling embed cycling..." + colors.ConsoleColors.RESET)
-        embed = None
         cycle_embed_timer = None
         return
 
@@ -71,8 +70,11 @@ def _cycle_embed() -> None:
 
         embed_cache[embed_index] = valid_embeds[0](*embed_args)
 
+    old_embed = embed # to fix threading errors
     embed = embed_cache[embed_index]
     embed.on_enable()
+    if old_embed is not None:
+        old_embed.on_disable()
 
     cycle_embed_timer = threading.Timer(embed.duration(), _cycle_embed)
     cycle_embed_timer.name = generate_thread_id("EmbedCycleTimer_")

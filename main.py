@@ -100,7 +100,7 @@ while running:
         embed_height = footer_rect.y - embed_y - content_spacing
         embed_rect = pygame.Rect(0, embed_y, display_size[0], embed_height)
         if embed_rect.size[0] <= 0 or embed_rect.size[1] <= 0:
-            print("Window height too small for embed!")
+            print(colors.ConsoleColors.RED + "Window height too small for embed!" + colors.ConsoleColors.RESET)
         else:
             if embed_surf is None or embed_surf.get_size() != embed_rect.size:
                 print("Creating embed surface...")
