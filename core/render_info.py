@@ -2,6 +2,7 @@ import random
 import string
 from core import colors
 from core import config
+from core import logging
 import embeds
 import digitransit.routing
 import traceback
@@ -19,13 +20,11 @@ def generate_thread_id(prefix: str, id_length: int = 4) -> str:
 
 def _stop_info_update_digitransit() -> None:
     global stopinfo, fetch_stopinfo_timer
-    print(colors.ConsoleColors.CYAN + "Fetching stop info..." + colors.ConsoleColors.RESET)
+    logging.info("Fetching stop info...", stack_info=False)
     try:
         stopinfo = digitransit.routing.get_stop_info(config.current.endpoint, get_stop_gtfsId(), config.current.departure_count)
     except Exception as e:
-        print(colors.ConsoleColors.RED + "An error occured while fetching stop info! Exception below:")
-        print(colors.ConsoleColors.YELLOW + f"{type(e).__name__}: {e}")
-        print(traceback.format_exc() + colors.ConsoleColors.RESET)
+        logging.error(e)
     if config.current.poll_rate > 0:
         fetch_stopinfo_timer = threading.Timer(config.current.poll_rate, _stop_info_update_digitransit)
         fetch_stopinfo_timer.name = generate_thread_id("StopInfoTimer_")
@@ -48,9 +47,9 @@ embed_cache: dict[int, embeds.Embed] = {}
 
 def _cycle_embed() -> None:
     global embed, embed_index, cycle_embed_timer
-    print(colors.ConsoleColors.MAGENTA + "Switching embed..." + colors.ConsoleColors.RESET)
+    logging.debug("Switching embed...", stack_info=False)
     if len(config.current.enabled_embeds) < 1:
-        print(colors.ConsoleColors.MAGENTA + "No embeds enabled! Cancelling embed cycling..." + colors.ConsoleColors.RESET)
+        logging.info("No embeds enabled! Cancelling embed cycling...", stack_info=False)
         cycle_embed_timer = None
         return
 
@@ -62,7 +61,7 @@ def _cycle_embed() -> None:
         embed_args = embed_launch[1:]
 
         prettyprint_args = ' '.join(embed_args)
-        print(f"Loading new embed '{embed_name}' with arguments '{prettyprint_args}' into cache...")
+        logging.debug(f"Loading new embed '{embed_name}' with arguments '{prettyprint_args}' into cache...", stack_info=False)
 
         valid_embeds: list[type[embeds.Embed]] = list(filter(lambda e: e.name() == embed_name, embeds.ALL_EMBEDS))
         assert len(valid_embeds) > 0, f"No embed named '{embed_name}' found!"

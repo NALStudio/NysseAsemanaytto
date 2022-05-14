@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from core import colors
+from core import logging
 
 import re
 import json
@@ -43,7 +44,7 @@ class Config:
                 content = remove_available_comment(f.read())
                 data = json.loads(content)
         else:
-            print(f"{colors.ConsoleColors.YELLOW}No config found on path: '{config_path}'\nCreating one with default settings.{colors.ConsoleColors.RESET}")
+            logging.warning(f"No config found on path: '{config_path}'\nCreating one with default settings.")
             _default_config = Config.default
             Config.save(_default_config, config_path)
             return _default_config
@@ -54,10 +55,10 @@ class Config:
         for k, v in data.items():
             original_value = getattr(conf, k, None)
             if original_value is None:
-                print(f"{colors.ConsoleColors.RED}No key '{k}' found to assign value '{v}'{colors.ConsoleColors.RESET}")
+                logging.error(f"No key '{k}' found to assign value '{v}'")
                 continue
             if not isinstance(v, type(original_value)):
-                print(f"{colors.ConsoleColors.RED}Value '{v}' cannot be assigned to key '{k}' with value '{original_value}' and will be skipped.{colors.ConsoleColors.RESET}", True)
+                logging.error(f"Value '{v}' cannot be assigned to key '{k}' with value '{original_value}' and will be skipped")
                 continue
 
             setattr(conf, k, v)
@@ -100,6 +101,7 @@ current: Config
 def init():
     global current
     current = Config.load("./config.json")
+
 
 def quit():
     Config.save(current, "./config.json")

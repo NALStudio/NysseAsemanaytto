@@ -1,28 +1,29 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+import pygame
+
+from core import logging
 from core import colors
 from core import renderers
 from core import config
 from core import render_info
 from core import font_helper
 
-import os
+logging.init()
 
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-import pygame
-
-
-print("Loading config...")
+logging.debug("Loading config...", stack_info=False)
 config.init()
-print("Config loaded.")
+logging.debug("Config loaded.", stack_info=False)
 
-print("Starting stop info thread...")
+logging.debug("Starting stop info thread...", stack_info=False)
 render_info.start_stop_info_fetch()
-print("Stop info thread started.")
+logging.debug("Stop info thread started.", stack_info=False)
 
-print("Starting embeds cycling thread...")
+logging.debug("Starting embeds cycling thread...", stack_info=False)
 render_info.start_embed_cycling()
-print("Embeds cycling thread started.")
+logging.debug("Embeds cycling thread started.", stack_info=False)
 
-print("Creating window...")
+logging.debug("Creating window...", stack_info=False)
 pygame.init()
 pygame.display.set_caption("Nysse Pysäkkinäyttö")
 pygame.display.set_icon(pygame.image.load("resources/textures/icon.png"))
@@ -32,12 +33,12 @@ if config.current.fullscreen:
 display = pygame.display.set_mode(config.current.window_size, display_flags)
 embed_surf: pygame.Surface | None = None
 clock = pygame.time.Clock()
-print("Window created.")
+logging.debug("Window created.", stack_info=False)
 
 pygame.mouse.set_visible(not config.current.hide_mouse)
-print(f"Mouse visibility: {pygame.mouse.get_visible()}")
+logging.info(f"Mouse visibility: {pygame.mouse.get_visible()}", stack_info=False)
 
-print(colors.ConsoleColors.GREEN + "Finished!" + colors.ConsoleColors.RESET)
+logging.info("Initialization Finished!", stack_info=False)
 
 debug: bool = False
 debugFont: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "debug")
@@ -76,6 +77,7 @@ while running:
     stoptime_y_index = 0
     stoptime_i = 0
     last_stoptime_y = -1
+    assert render_info.stopinfo.stoptimes is not None
     while stoptime_i < len(render_info.stopinfo.stoptimes) and ((stoptime_y_index < config.current.visible_count) if config.current.visible_count is not None else True):
         stoptime = render_info.stopinfo.stoptimes[stoptime_i]
         if stoptime.headsign not in config.current.ignore_headsigns:
@@ -100,10 +102,10 @@ while running:
         embed_height = footer_rect.y - embed_y - content_spacing
         embed_rect = pygame.Rect(0, embed_y, display_size[0], embed_height)
         if embed_rect.size[0] <= 0 or embed_rect.size[1] <= 0:
-            print(colors.ConsoleColors.RED + "Window height too small for embed!" + colors.ConsoleColors.RESET)
+            logging.error("Window height too small for embed!")
         else:
             if embed_surf is None or embed_surf.get_size() != embed_rect.size:
-                print("Creating embed surface...")
+                logging.debug("Creating embed surface...", stack_info=False)
                 embed_surf = pygame.Surface(embed_rect.size)
             embed_surf.fill(colors.Colors.BLACK)  # Theoritcally could be in an else statement because new surfaces are always black, but whatever...
             render_info.embed.render(embed_surf)

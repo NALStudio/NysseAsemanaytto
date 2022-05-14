@@ -1,6 +1,6 @@
 from digitransit.routing import Stop
 from core.colors import Colors
-from core import font_helper
+from core import font_helper, logging
 import pygame
 import pygame.draw
 import pygame.font
@@ -18,7 +18,7 @@ def renderStopInfo(px_size: tuple[int, int], stopinfo: Stop) -> pygame.Surface:
 
     target_icon_size: int = round(px_size[1] / 1.75)
     if stop_icon is None or stop_icon.get_height() != target_icon_size:
-        print("Loading new icon for stop info rendering...")
+        logging.debug("Loading new icon for stop info rendering...", stack_info=False)
         stop_icon = pygame.image.load("resources/textures/pictograms/pysakki.png")
         stop_icon = pygame.transform.smoothscale(stop_icon, (target_icon_size, target_icon_size)).convert_alpha()
 

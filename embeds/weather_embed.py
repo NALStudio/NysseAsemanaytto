@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import embeds
-from core import weather_handler, colors, font_helper
+from core import weather_handler, colors, font_helper, logging
 import pygame
 import time
 from typing import Iterable
@@ -27,7 +27,7 @@ class WeatherEmbed(embeds.Embed):
     def on_enable(self):
         now_update = time.process_time()
         if self.last_update is None or now_update - self.last_update > self.refresh_rate:
-            print(f"Loading new weather data... ({self.fmi_place})")
+            logging.info(f"Loading new weather data... ({self.fmi_place})", stack_info=False)
 
             duration = datetime.timedelta(hours=self.hour_count) # 12 because I don't trust 11.
             params = weather_handler.WeatherFetchParams(duration, 3 * 60)

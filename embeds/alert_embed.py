@@ -3,7 +3,7 @@ from __future__ import annotations
 import embeds
 import digitransit.routing
 import time
-from core import colors, config, font_helper, render_info
+from core import colors, config, font_helper, render_info, logging
 import pygame
 
 alert_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "alert rendering")
@@ -37,7 +37,7 @@ class AlertEmbed(embeds.Embed):
         self.enable_time = now_update
 
         if self.last_update is None or now_update - self.last_update > self.poll_rate:
-            print(f"Loading new alert data...")
+            logging.info(f"Loading new alert data...", stack_info=False)
 
             self.alerts = digitransit.routing.get_alerts(config.current.endpoint, ("tampere",)) # Optimally would be on a separate thread, but on_enable is already threaded after the first call so whatever
 
@@ -71,7 +71,7 @@ class AlertEmbed(embeds.Embed):
 
             assert alert.route is not None # This check is handled by global check
             if alert.route.stops is None: # No stops defined for the route. Return false with error.
-                print(colors.ConsoleColors.RED + "No stops defined for alert's route!" + colors.ConsoleColors.RESET)
+                logging.error("No stops defined for alert's route!")
                 return False # Insufficient route info, False is returned
 
             if all(stop.gtfsId != rendered_stop_gtfsId for stop in alert.route.stops): # Return false if the alert's route does not include the displayed stop
@@ -119,13 +119,13 @@ class AlertEmbed(embeds.Embed):
         if self.enable_time is not None: # FUCK THREADING
             time_elapsed = time.process_time() - self.enable_time
         else:
-            print(colors.ConsoleColors.YELLOW + "Alert embed enable time is None!" + colors.ConsoleColors.RESET)
+            logging.warning("Alert embed enable time is None!")
             time_elapsed = time_per_page * len(pages)
 
         page_index = int(time_elapsed / time_per_page)
         if page_index >= len(pages): # It is possible that the page index is greater than the number of pages at the end of the embed cycle.
             if page_index > len(pages): # If the page index is 2 or more over the amount of pages, warn the user.
-                print(colors.ConsoleColors.YELLOW + f"Alert page index {page_index - (len(pages) - 1)} over the maximum page index." + colors.ConsoleColors.RESET)
+                logging.debug(f"Alert page index {page_index - (len(pages) - 1)} over the maximum page index.", stack_info=False)
             page_index = len(pages) - 1
 
         page_render = font_helper.render_page(font, pages[page_index], True, colors.Colors.BLACK)

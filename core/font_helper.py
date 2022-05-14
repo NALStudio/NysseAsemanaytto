@@ -1,4 +1,5 @@
-import math
+from core import math
+from core import logging
 from typing import Generator, Iterable, NamedTuple, Sequence
 import pygame
 
@@ -13,7 +14,7 @@ class SizedFont:
     def get_size(self, size: int) -> pygame.font.Font:
         if self._font is None or size != self._loaded_size:
             if self._purpose is not None:
-                print(f"Loading new font for {self._purpose}...")
+                logging.debug(f"Loading new font for {self._purpose}...", stack_info=False)
 
             self._loaded_size = size
             self._font = pygame.font.Font(self._path, size)
