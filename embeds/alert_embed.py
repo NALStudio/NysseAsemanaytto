@@ -1,4 +1,5 @@
 from __future__ import annotations
+import threading
 
 import embeds
 import digitransit.routing
@@ -28,6 +29,7 @@ class AlertEmbed(embeds.Embed):
 
 
         self.alerts: list[digitransit.routing.Alert] | None = None
+        self.filtered_alerts: list[digitransit.routing.Alert] | None = None
         self.alert_index: int = 0
         self.last_update: float | None = None
         self.enable_time: float | None = None
@@ -39,12 +41,24 @@ class AlertEmbed(embeds.Embed):
         if self.last_update is None or now_update - self.last_update > self.poll_rate:
             logging.info(f"Loading new alert data...", stack_info=False)
 
-            self.alerts = digitransit.routing.get_alerts(config.current.endpoint, ("tampere",)) # Optimally would be on a separate thread, but on_enable is already threaded after the first call so whatever
+            threading.Thread(target=self.load_and_filter_alerts, name="alerts_fetch").start()
 
             self.last_update = now_update
             # Not adding difference but rather setting the value
             # because accuracy is not really important
             # and it works nicer with the None check.
+
+    def load_and_filter_alerts(self):
+        alerts = digitransit.routing.get_alerts(config.current.endpoint, ("tampere",))
+
+        filtered_alerts = [alert for alert in alerts if self._alert_meets_filter_requirements(alert)]
+
+        # There seem to be duplicates during the 2022 Finnish Ice Hockey World Championship, but I don't think that normally happens...
+        if self.remove_duplicates: # Remove duplicates by checking if the descriptions (the only visible part basically) are the same
+            filtered_alerts = [alert for alert_index, alert in enumerate(filtered_alerts) if all(alert.alertDescriptionText != other.alertDescriptionText for other in filtered_alerts[:alert_index])]
+
+        self.alerts = alerts # Values are set here due to threading
+        self.filtered_alerts = filtered_alerts
 
     def on_disable(self):
         self.alert_index += 1
@@ -84,15 +98,9 @@ class AlertEmbed(embeds.Embed):
 
         surface.fill(BACKGROUND_COLOR)
 
-        filtered_alerts: list[digitransit.routing.Alert] | None = self.alerts # Value is set before if-check due to threading
+        filtered_alerts: list[digitransit.routing.Alert] | None = self.filtered_alerts # Value is set before if-check due to threading
         if filtered_alerts is None:
             return
-
-        filtered_alerts = [alert for alert in filtered_alerts if self._alert_meets_filter_requirements(alert)]
-
-        # There seem to be duplicates during the 2022 Finnish Ice Hockey World Championship, but I don't think that normally happens...
-        if self.remove_duplicates: # Remove duplicates by checking if the descriptions (the only visible part basically) are the same
-            filtered_alerts = [alert for alert_index, alert in enumerate(filtered_alerts) if all(alert.alertDescriptionText != other.alertDescriptionText for other in filtered_alerts[:alert_index])]
 
         font = alert_font.get_size(round(surface.get_height() / 10))
 

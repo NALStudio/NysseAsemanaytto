@@ -16,6 +16,7 @@ class Weather:
 
 @dataclass
 class WeatherFetchParams:
+    starttime: datetime.datetime
     duration: datetime.timedelta
     timestep_minutes: int | None = None
 
@@ -75,8 +76,7 @@ class _WeatherRequestProvider: # HACK: Passing arguments on thread start ignores
             yield wt
 
     def get_weather(self) -> None:
-        utcnow: datetime.datetime = datetime.datetime.utcnow()
-        starttime = utcnow.replace(minute=0, second=0, microsecond=0)
+        starttime = self.params.starttime
         endtime: datetime.datetime = starttime + self.params.duration
 
         DATETIME_FORMAT: str = "%Y-%m-%dT%H:%M:%SZ"

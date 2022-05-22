@@ -46,6 +46,8 @@ from core.math.rect import Rect as Rect
 #region Constants
 PI = _math_module_pi_constant
 EPSILON = _sys.float_info.epsilon
+GOLDEN_RATIO = (1 + sqrt(5)) / 2
+
 INFINITY = float("inf")
 NEGATIVEINFINITY = float("-inf")
 NAN = float("nan")
@@ -87,17 +89,6 @@ def sign(__x: _typing.SupportsFloat) -> int:
     # copysign behaviour is not consistent across different platforms
 
 
-def ceil_to_digits(__x: _typing.SupportsFloat, digits: int = 0) -> float:
-    """Return the ceiling of x as a float with specified decimal accuracy."""
-    pow10: float = pow(10.0, float(digits))
-    return ceil(float(__x) * pow10) / pow10 # dividing changes output to float
-
-def floor_to_digits(__x: _typing.SupportsFloat, digits: int = 0) -> float:
-    """Return the floor of x as a float with specified decimal accuracy."""
-    pow10: float = pow(10.0, float(digits))
-    return floor(float(__x) * pow10) / pow10 # dividing changes output to float
-
-
 def is_positive_inf(__x: _typing.SupportsFloat) -> bool:
     """Return ``True`` if ``x`` is positive infinity, and ``False`` otherwise."""
     x = float(__x)
@@ -134,6 +125,56 @@ def remap01(value: float, from1: float, to1: float) -> float:
 #endregion
 
 #region Rounding
+def ceil_to_digits(__x: _typing.SupportsFloat, digits: int = 0) -> float:
+    """Return the ceiling of x as a float with specified decimal accuracy."""
+    pow10: float = pow(10.0, float(digits))
+    return ceil(float(__x) * pow10) / pow10 # dividing changes output to float
+
+def floor_to_digits(__x: _typing.SupportsFloat, digits: int = 0) -> float:
+    """Return the floor of x as a float with specified decimal accuracy."""
+    pow10: float = pow(10.0, float(digits))
+    return floor(float(__x) * pow10) / pow10 # dividing changes output to float
+
+def round_to_nearest_n(__x: _typing.SupportsFloat, n: int) -> int:
+    """
+    Round a number to the nearest multiple of ``n``.
+    """
+    return round(float(__x) / n) * n
+
+def round_to_nearest_n_to_digits(__x: _typing.SupportsFloat, n: int, digits: int = 0) -> float:
+    """
+    Round a number to the nearest multiple of ``n`` with specified decimal accuracy.
+    """
+    pow10: float = pow(10.0, float(digits))
+    return round_to_nearest_n(float(__x) * pow10, n) / pow10 # dividing changes output to float
+
+def floor_to_nearest_n(__x: _typing.SupportsFloat, n: int) -> int:
+    """
+    Floor a number to the nearest multiple of ``n``.
+    """
+    return floor(float(__x) / n) * n
+
+def floor_to_nearest_n_to_digits(__x: _typing.SupportsFloat, n: int, digits: int = 0) -> float:
+    """
+    Floor a number to the nearest multiple of ``n`` with specified decimal accuracy.
+    """
+    pow10: float = pow(10.0, float(digits))
+    return floor_to_nearest_n(float(__x) * pow10, n) / pow10 # dividing changes output to float
+
+def ceil_to_nearest_n(__x: _typing.SupportsFloat, n: int) -> int:
+    """
+    Ceil a number to the nearest multiple of ``n``.
+    """
+    return ceil(float(__x) / n) * n
+
+def ceil_to_nearest_n_to_digits(__x: _typing.SupportsFloat, n: int, digits: int = 0) -> float:
+    """
+    Ceil a number to the nearest multiple of ``n`` with specified decimal accuracy.
+    """
+    pow10: float = pow(10.0, float(digits))
+    return ceil_to_nearest_n(float(__x) * pow10, n) / pow10 # dividing changes output to float
+
+
 def round_away_from_zero_to_digits(__x: float, digits: int) -> float:
     """
     Round a number to a given precision in decimal digits.

@@ -8,6 +8,8 @@ from core import renderers
 from core import config
 from core import render_info
 from core import font_helper
+from core import debug
+from core import clock
 
 logging.init()
 
@@ -32,7 +34,6 @@ if config.current.fullscreen:
     display_flags |= pygame.FULLSCREEN
 display = pygame.display.set_mode(config.current.window_size, display_flags)
 embed_surf: pygame.Surface | None = None
-clock = pygame.time.Clock()
 logging.debug("Window created.", stack_info=False)
 
 pygame.mouse.set_visible(not config.current.hide_mouse)
@@ -40,7 +41,6 @@ logging.info(f"Mouse visibility: {pygame.mouse.get_visible()}", stack_info=False
 
 logging.info("Initialization Finished!", stack_info=False)
 
-debug: bool = False
 debugFont: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "debug")
 
 running: bool = True
@@ -55,7 +55,12 @@ while running:
             running = False
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_F3:
-                debug = not debug
+                debug.enabled = not debug.enabled
+            elif event.key == pygame.K_F4:
+                if debug.profiler.is_enabled():
+                    debug.profiler.disable()
+                elif debug.enabled: # Checking this so someone doesn't accidentally turn it on while playing
+                    debug.profiler.enable()
 
     #region Background
     display.blit(renderers.background.renderBackground(display_size), (0, 0))
@@ -113,8 +118,23 @@ while running:
     #endregion
 
     #region Debug
-    if debug:
-        display.blit(debugFont.get_size(10).render(format(clock.get_fps(), ".3f"), True, colors.Colors.WHITE), (0, 0))
+    if debug.enabled:
+        fields = debug.get_fields()
+
+        font = debugFont.get_size(10)
+        renders = [
+            font.render(f"{name}: {value}", True, colors.Colors.WHITE)
+            for name, value in fields
+        ]
+
+        width = max(renders, key=lambda render: render.get_width()).get_width()
+        height = len(renders) * font.get_linesize()
+        background = pygame.surface.Surface((width, height))
+        background.set_alpha(128)
+
+        display.blit(background, (0, 0))
+        for i, render in enumerate(renders):
+            display.blit(render, (0, i * font.get_linesize()))
     #endregion
 
     # NOTE: Assuming no animations are present which need accurate framerate timing and not clock.tick inaccuracies.
