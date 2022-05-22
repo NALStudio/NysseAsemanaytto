@@ -1,4 +1,6 @@
 from __future__ import annotations
+from types import NoneType, UnionType
+from typing import NamedTuple, get_type_hints, get_args
 
 from core import colors
 from core import logging
@@ -7,21 +9,21 @@ import re
 import json
 import os
 
-class Config:
-    def __init__(self, **kwargs) -> None:
-        """Instantiate config with default settings"""
 
-        self.stopcode: int = 3522
-        self.ignore_headsigns: list[str] = []
-        self.departure_count = 10
-        self.visible_count: int | None = None
-        self.poll_rate: int = 30
-        self.endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
-        self.window_size: list[int] = [360, 640]
-        self.fullscreen: bool = False
-        self.framerate: int = -1
-        self.hide_mouse: bool = True
-        self.enabled_embeds: list[str] = []
+class Config(NamedTuple):
+
+    stopcode: int = 3522
+    ignore_headsigns: list[str] = []
+    departure_count = 10
+    visible_count: int | None = None
+    poll_rate: int = 30
+    endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
+    window_size: tuple[int, int] = (360, 640) # Value loaded from json is a list
+    fullscreen: bool = False
+    framerate: int = -1
+    hide_mouse: bool = True
+    enabled_embeds: list[str] = []
+
 
     @classmethod
     @property
@@ -70,7 +72,7 @@ class Config:
         default = Config()
 
         to_save: dict[str, str | int | float | bool] = {}
-        for k, v in config.__dict__.items():
+        for k, v in config._asdict().items():
             if k.startswith("_"):
                 continue
             if getattr(default, k) == v:  # If value is same as default
@@ -86,11 +88,18 @@ class Config:
     @staticmethod
     def _generate_available_settings() -> str:
         out = "Available settings (json):\n"
-        for k, v in Config().__dict__.items():
+        for k, v in Config()._asdict().items():
             if k.startswith("_"):
                 continue
 
-            out += f"\n{k}: {type(v).__name__} (Default: {v})"
+            typehint: type | UnionType = get_type_hints(Config)[k]
+            typename = typehint.__name__ if not isinstance(typehint, UnionType) else str(typehint)
+            typeargs: tuple[type, ...] = get_args(typehint) if not isinstance(typehint, UnionType) else tuple()
+            if len(typeargs) > 0:
+                typeargstrings = [targ.__name__ for targ in typeargs]
+                typename += f"<{', '.join(typeargstrings)}>"
+            typename = typename.replace("None", "null")
+            out += f"\n{k}: {typename} (Default: {json.dumps(v)})"
 
         return out
 
