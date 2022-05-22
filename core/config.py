@@ -1,6 +1,7 @@
 from __future__ import annotations
-from types import NoneType, UnionType
-from typing import NamedTuple, get_type_hints, get_args
+from dataclasses import dataclass, field
+from types import UnionType
+from typing import get_type_hints, get_args
 
 from core import colors
 from core import logging
@@ -10,11 +11,12 @@ import json
 import os
 
 
-class Config(NamedTuple):
+@dataclass
+class Config:
 
     stopcode: int = 3522
-    ignore_headsigns: list[str] = []
-    departure_count = 10
+    ignore_headsigns: list[str] = field(default_factory=list)
+    departure_count: int = 10
     visible_count: int | None = None
     poll_rate: int = 30
     endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
@@ -22,7 +24,7 @@ class Config(NamedTuple):
     fullscreen: bool = False
     framerate: int = -1
     hide_mouse: bool = True
-    enabled_embeds: list[str] = []
+    enabled_embeds: list[str] = field(default_factory=list)
 
 
     @classmethod
@@ -72,7 +74,7 @@ class Config(NamedTuple):
         default = Config()
 
         to_save: dict[str, str | int | float | bool] = {}
-        for k, v in config._asdict().items():
+        for k, v in config.__dict__.items():
             if k.startswith("_"):
                 continue
             if getattr(default, k) == v:  # If value is same as default
@@ -88,7 +90,7 @@ class Config(NamedTuple):
     @staticmethod
     def _generate_available_settings() -> str:
         out = "Available settings (json):\n"
-        for k, v in Config()._asdict().items():
+        for k, v in Config().__dict__.items():
             if k.startswith("_"):
                 continue
 
