@@ -5,7 +5,7 @@ from core import logging
 
 background: pygame.surface.Surface | None = None
 
-def renderBackground(px_size: tuple[int, int]) -> pygame.surface.Surface:
+def render_background(px_size: tuple[int, int]) -> pygame.surface.Surface:
     global background
 
     if background is None or background.get_size() != px_size:

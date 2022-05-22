@@ -10,7 +10,7 @@ from digitransit.routing import Stoptime
 font_bold: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.ttf")
 font_regular: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf")
 
-def renderStoptime(px_size: tuple[int, int], stoptime: Stoptime) -> pygame.Surface:
+def render_stoptime(px_size: tuple[int, int], stoptime: Stoptime) -> pygame.Surface:
     font_height: int = px_size[1] - round(px_size[1] / 3)
 
     surf = pygame.Surface(px_size, pygame.SRCALPHA)

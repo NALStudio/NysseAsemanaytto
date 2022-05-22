@@ -11,7 +11,9 @@ nyssefi_text: pygame.surface.Surface | None = None
 
 footer_pictograms: pygame.surface.Surface | None = None
 
-def renderFooter(px_size: tuple[int, int]) -> pygame.Surface:
+cached_footer: pygame.Surface | None = None
+
+def _render_footer_internal(px_size: tuple[int, int]) -> pygame.Surface:
     global nyssefi_font_height, footer_pictograms, nyssefi_text
     target_nyysefi_font_height: int = px_size[1]
     if nyssefi_text is None or target_nyysefi_font_height != nyssefi_font_height:
@@ -35,3 +37,11 @@ def renderFooter(px_size: tuple[int, int]) -> pygame.Surface:
     surf.blit(nyssefi_text, (pictograms_x - (nyssefi_text.get_width() // 5 * 0.7) - nyssefi_text.get_width(), px_size[1] // 2 - nyssefi_text.get_height() // 2))
 
     return surf
+
+def render_footer(px_size: tuple[int, int]) -> pygame.Surface:
+    global cached_footer
+    if cached_footer is None or cached_footer.get_size() != px_size:
+        logging.debug("Rendering new footer...", stack_info=False)
+        cached_footer = _render_footer_internal(px_size)
+
+    return cached_footer

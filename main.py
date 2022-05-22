@@ -63,18 +63,18 @@ while running:
                     debug.profiler.enable()
 
     #region Background
-    display.blit(renderers.background.renderBackground(display_size), (0, 0))
+    display.blit(renderers.background.render_background(display_size), (0, 0))
     #endregion
 
     #region Header
     header_rect = pygame.Rect(content_offset, content_offset, content_width, display_size[0] / 13)
     assert render_info.stopinfo.vehicleMode is not None
-    display.blit(renderers.header.renderHeader(header_rect.size, render_info.stopinfo.vehicleMode), header_rect.topleft)
+    display.blit(renderers.header.render_header(header_rect.size, render_info.stopinfo.vehicleMode), header_rect.topleft)
     #endregion
 
     #region Stop Info
     stop_info_rect = pygame.Rect(content_offset, header_rect.bottom + content_spacing * 2, content_width, display_size[0] / 9)
-    display.blit(renderers.stop_info.renderStopInfo(stop_info_rect.size, render_info.stopinfo), stop_info_rect.topleft)
+    display.blit(renderers.stop_info.render_stopinfo(stop_info_rect.size, render_info.stopinfo), stop_info_rect.topleft)
     #endregion
 
     #region Stoptimes
@@ -88,7 +88,7 @@ while running:
         if stoptime.headsign not in config.current.ignore_headsigns:
             last_stoptime_y = stop_info_rect.bottom + content_spacing + stoptime_y_index * (content_spacing / 2 + stoptime_height)
             stoptime_rect = pygame.Rect(content_offset, last_stoptime_y, content_width, stoptime_height)
-            display.blit(renderers.stoptime.renderStoptime(stoptime_rect.size, render_info.stopinfo.stoptimes[stoptime_i]), stoptime_rect.topleft)
+            display.blit(renderers.stoptime.render_stoptime(stoptime_rect.size, render_info.stopinfo.stoptimes[stoptime_i]), stoptime_rect.topleft)
 
             stoptime_y_index += 1
 
@@ -98,7 +98,7 @@ while running:
     #region Footer
     footer_rect = pygame.Rect(content_offset, -1, content_width, display_size[0] / 13)
     footer_rect.y = display_size[1] - content_offset - footer_rect.height
-    display.blit(renderers.footer.renderFooter(footer_rect.size), footer_rect.topleft)
+    display.blit(renderers.footer.render_footer(footer_rect.size), footer_rect.topleft)
     #endregion
 
     #region Embeds

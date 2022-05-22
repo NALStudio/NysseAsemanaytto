@@ -12,7 +12,7 @@ font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.t
 
 stop_icon: pygame.surface.Surface | None = None
 
-def renderStopInfo(px_size: tuple[int, int], stopinfo: Stop) -> pygame.Surface:
+def render_stopinfo(px_size: tuple[int, int], stopinfo: Stop) -> pygame.Surface:
     global font, stop_icon
     font_height: int = px_size[1] - round(px_size[1] / 3)
 

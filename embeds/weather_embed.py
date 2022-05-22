@@ -53,8 +53,11 @@ class WeatherEmbed(embeds.Embed):
 
     # This is re-rendered by the render() or _set_weather() methods.
     def render_cached_surface(self, size: tuple[int, int]) -> None:
+        logging.debug("Rendering new weather embed...", stack_info=False)
+
         weather = self.weather
         if weather is None:
+            logging.debug("Weather data is not loaded yet! Cancelling weather embed rendering...", stack_info=False)
             return
 
         HORIZONTAL_MARGIN = round(size[0] / 30)
