@@ -27,7 +27,7 @@ logging.debug("Embeds cycling thread started.", stack_info=False)
 
 logging.debug("Creating window...", stack_info=False)
 pygame.init()
-pygame.display.set_caption("Nysse Pysäkkinäyttö")
+pygame.display.set_caption("Nysse Asemanäyttö")
 pygame.display.set_icon(pygame.image.load("resources/textures/icon.png"))
 display_flags = pygame.RESIZABLE
 if config.current.fullscreen:
