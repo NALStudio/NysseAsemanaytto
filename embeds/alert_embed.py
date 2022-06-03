@@ -112,7 +112,7 @@ class AlertEmbed(embeds.Embed):
         page_index_font = page_font.get_size(round(surface_size[1] / 20))
 
         # No alerts
-        if len(filtered_alerts) < 1 or True:
+        if len(filtered_alerts) < 1:
             no_alerts = font.render("Ei häiriöitä Nyssen toiminnassa.", True, (80, 80, 80))
             surface.blit(no_alerts, (surface_size[0] / 2 - no_alerts.get_width() / 2, surface_size[1] / 2 - no_alerts.get_height() / 2))
             return
