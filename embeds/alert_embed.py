@@ -149,8 +149,9 @@ class AlertEmbed(embeds.Embed):
             page_index = page_count - 1
 
         # Page index
-        page_index_render = page_index_font.render(f"{page_index + 1}/{page_count}", True, colors.Colors.BLACK)
-        surface.blit(page_index_render, (surface_size[0] - page_index_render.get_width() - content_spacing, content_spacing))
+        if page_count > 1:
+            page_index_render = page_index_font.render(f"{page_index + 1}/{page_count}", True, colors.Colors.BLACK)
+            surface.blit(page_index_render, (surface_size[0] - page_index_render.get_width() - content_spacing, content_spacing))
 
         # Text body
         page_render = font_helper.render_page(font, pages[page_index], True, colors.Colors.BLACK)
