@@ -57,13 +57,15 @@ class Config:
 
         conf: Config = Config()
         for k, v in data.items():
-            original_value = getattr(conf, k, None)
-            if original_value is None:
-                logging.error(f"No key '{k}' found to assign value '{v}'")
-                continue
-            if not isinstance(v, type(original_value)):
-                logging.error(f"Value '{v}' cannot be assigned to key '{k}' with value '{original_value}' and will be skipped")
-                continue
+            # Disable all checks until we come up with a better system...
+            #
+            # original_value = getattr(conf, k, None)
+            # if original_value is None:
+            #     logging.error(f"No key '{k}' found to assign value '{v}'")
+            #     continue
+            # if not isinstance(v, type(original_value)):
+            #     logging.error(f"Value '{v}' cannot be assigned to key '{k}' with value '{original_value}' and will be skipped")
+            #     continue
 
             setattr(conf, k, v)
 
