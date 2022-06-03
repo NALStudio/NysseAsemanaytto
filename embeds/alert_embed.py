@@ -7,7 +7,8 @@ import time
 from core import colors, config, font_helper, render_info, logging
 import pygame
 
-alert_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "alert rendering")
+alert_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Regular.ttf", "alert rendering")
+page_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Regular.ttf", "alert page number rendering")
 
 class AlertEmbed(embeds.Embed):
     def __init__(self, *args: str):
@@ -93,20 +94,27 @@ class AlertEmbed(embeds.Embed):
 
         return True # Passed all checks
 
-    def render(self, surface: pygame.Surface):
+    def render(self, surface: pygame.Surface, content_spacing: int):
         BACKGROUND_COLOR = colors.Colors.WHITE
+        BORDER_COLOR = colors.NysseColors.RATIKANPUNAINEN
 
-        surface.fill(BACKGROUND_COLOR)
+        surface_size: tuple[int, int] = surface.get_size()
+        border_radius = round(surface_size[1] / 15)
+        border_width = round(content_spacing / 2)
+        pygame.draw.rect(surface, BACKGROUND_COLOR, (0, 0, *surface_size), border_radius=border_radius)
+        pygame.draw.rect(surface, BORDER_COLOR, (0, 0, *surface_size), border_width, border_radius=border_radius)
 
         filtered_alerts: list[digitransit.routing.Alert] | None = self.filtered_alerts # Value is set before if-check due to threading
         if filtered_alerts is None:
             return
 
-        font = alert_font.get_size(round(surface.get_height() / 10))
+        font = alert_font.get_size(round(surface_size[1] / 11))
+        page_index_font = page_font.get_size(round(surface_size[1] / 20))
 
-        if len(filtered_alerts) < 1:
-            no_alerts = font.render("Ei häiriöitä Nyssen toiminnassa.", True, colors.Colors.BLACK)
-            surface.blit(no_alerts, (surface.get_width() / 2 - no_alerts.get_width() / 2, surface.get_height() / 2 - no_alerts.get_height() / 2))
+        # No alerts
+        if len(filtered_alerts) < 1 or True:
+            no_alerts = font.render("Ei häiriöitä Nyssen toiminnassa.", True, (80, 80, 80))
+            surface.blit(no_alerts, (surface_size[0] / 2 - no_alerts.get_width() / 2, surface_size[1] / 2 - no_alerts.get_height() / 2))
             return
 
         # DEBUG:
@@ -122,24 +130,32 @@ class AlertEmbed(embeds.Embed):
         self.alert_index %= len(filtered_alerts)
         alert = filtered_alerts[self.alert_index]
 
-        pages: list[font_helper.Page] = list(font_helper.pagination(font, alert.alertDescriptionText, surface.get_size()))
+        text_rect = pygame.Rect(round(content_spacing * 1.5), round(content_spacing * 1.5), surface_size[0] - content_spacing * 3, surface_size[1] - content_spacing * 3)
+        pages: list[font_helper.Page] = list(font_helper.pagination(font, alert.alertDescriptionText, text_rect.size))
+        page_count = len(pages)
 
-        time_per_page: float = self.duration() / len(pages)
+        time_per_page: float = self.duration() / page_count
         time_elapsed: float
         if self.enable_time is not None: # FUCK THREADING
             time_elapsed = time.process_time() - self.enable_time
         else:
             logging.warning("Alert embed enable time is None!")
-            time_elapsed = time_per_page * len(pages)
+            time_elapsed = time_per_page * page_count
 
         page_index = int(time_elapsed / time_per_page)
-        if page_index >= len(pages): # It is possible that the page index is greater than the number of pages at the end of the embed cycle.
-            if page_index > len(pages): # If the page index is 2 or more over the amount of pages, warn the user.
-                logging.debug(f"Alert page index {page_index - (len(pages) - 1)} over the maximum page index.", stack_info=False)
-            page_index = len(pages) - 1
+        if page_index >= page_count: # It is possible that the page index is greater than the number of pages at the end of the embed cycle.
+            if page_index > page_count: # If the page index is 2 or more over the amount of pages, warn the user.
+                logging.debug(f"Alert page index {page_index - (page_count - 1)} over the maximum page index.", stack_info=False)
+            page_index = page_count - 1
 
+        # Page index
+        page_index_render = page_index_font.render(f"{page_index + 1}/{page_count}", True, colors.Colors.BLACK)
+        surface.blit(page_index_render, (surface_size[0] - page_index_render.get_width() - content_spacing, content_spacing))
+
+        # Text body
         page_render = font_helper.render_page(font, pages[page_index], True, colors.Colors.BLACK)
-        surface.blit(page_render, (0, 0))
+        surface.blit(page_render, text_rect.topleft)
+
 
     @staticmethod
     def name() -> str:

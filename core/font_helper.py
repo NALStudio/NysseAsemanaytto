@@ -29,15 +29,17 @@ def wrap_text(font: pygame.font.Font, text: str, max_width: int) -> Iterable[str
 
     WORD_BOUNDARY = " "
 
-    line: str = ""
+    line: str | None = None
     for word in text.split(WORD_BOUNDARY):
-        if font.size(line + WORD_BOUNDARY + word)[0] > max_width:
+        if line is not None and font.size(line + WORD_BOUNDARY + word)[0] > max_width:
             yield line
+            line = word
+        elif line is None:
             line = word
         else:
             line += WORD_BOUNDARY + word
 
-    if len(line) > 0:
+    if line is not None and len(line) > 0:
         yield line
 
 

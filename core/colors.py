@@ -13,4 +13,4 @@ class NysseColors:
     PINKKI = (214, 37, 96)
     VIHREÄ = (14, 127, 60)
     ORANSSI = (235, 94, 71)
-    RATIKANPUNAINEN = (21, 33, 40)
+    RATIKANPUNAINEN = (218, 33, 40)

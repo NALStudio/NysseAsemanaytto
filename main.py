@@ -111,9 +111,9 @@ while running:
         else:
             if embed_surf is None or embed_surf.get_size() != embed_rect.size:
                 logging.debug("Creating embed surface...", stack_info=False)
-                embed_surf = pygame.Surface(embed_rect.size)
-            embed_surf.fill(colors.Colors.BLACK)  # Theoritcally could be in an else statement because new surfaces are always black, but whatever...
-            render_info.embed.render(embed_surf)
+                embed_surf = pygame.Surface(embed_rect.size, pygame.SRCALPHA)
+            embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
+            render_info.embed.render(embed_surf, content_spacing)
             display.blit(embed_surf, embed_rect.topleft)
     #endregion
 

@@ -2,11 +2,6 @@ from digitransit.routing import Stop
 from core.colors import Colors
 from core import font_helper, logging
 import pygame
-import pygame.draw
-import pygame.font
-import pygame.image
-import pygame.surface
-import pygame.transform
 
 font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.ttf", "stop info rendering")
 
