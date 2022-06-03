@@ -164,4 +164,4 @@ class AlertEmbed(embeds.Embed):
 
     @staticmethod
     def duration() -> float:
-        return 30.0
+        return 15.0
