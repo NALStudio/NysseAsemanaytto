@@ -1,4 +1,5 @@
 import os
+import threading
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 
@@ -10,8 +11,11 @@ from core import render_info
 from core import font_helper
 from core import debug
 from core import clock
+from core import thread_exception_handler
 
 logging.init()
+
+threading.excepthook = thread_exception_handler.thread_excepthook
 
 logging.debug("Loading config...", stack_info=False)
 config.init()

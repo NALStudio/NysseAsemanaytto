@@ -4,7 +4,9 @@ import inspect as _inspect
 import logging as _logger
 import os as _os
 import platform as _platform
+import threading
 import traceback as _traceback
+import types
 import psutil as _psutil
 import pygame as _pygame
 
@@ -95,18 +97,23 @@ def init():
     #endregion
 
 
-def dump_crash_exception(exception: Exception) -> None:
-    """Dumps the crash exception into a file"""
+def dump_exception(exception: Exception) -> None:
+    """Dumps the an exception into a file"""
+    dump_exception_with_params(type(exception), exception, exception.__traceback__)
+
+def dump_exception_with_params(exc_type: type[BaseException], exc_value: BaseException | None, exc_traceback: types.TracebackType | None, thread: threading.Thread | None = None) -> None:
+    """Dumps the an exception into a file using specified parameters"""
     crashtime: str = _datetime.now().strftime(_logfile_time_format)
-    filename = _os.path.join(LOGGING_DIRECTORY, f"{_crashfile_prefix}{crashtime}{_crashfile_extension}")
+    thread_prefix: str = f"thread({thread.name})_" if thread is not None else ""
+    filename = _os.path.join(LOGGING_DIRECTORY, f"{thread_prefix}{_crashfile_prefix}{crashtime}{_crashfile_extension}")
     exc: list[str]
     try:
-        exc = _traceback.format_exception(type(exception), exception, exception.__traceback__)
+        exc = _traceback.format_exception(exc_type, exc_value, exc_traceback)
     except Exception as e:
         exc = [
             "[DUMP ERROR]: Could not format exception.",
            f"Got error: '{type(e).__name__}' with message: '{e}' during formatting.",
-           f"Got error: '{type(exception).__name__}' with message: '{exception}' during application execution."
+           f"Got error: '{exc_type.__name__}' with message: '{exc_value}' during application execution."
         ]
 
     with open(filename, "w", encoding="utf-8") as f:
