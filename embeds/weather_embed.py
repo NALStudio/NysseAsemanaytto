@@ -33,7 +33,9 @@ class WeatherEmbed(embeds.Embed):
         def round_to_nearest_third_hour(dt: datetime.datetime):
             total_hours: float = dt.hour + dt.minute / 60.0
             rounded_hours: int = math.round_to_nearest_n(total_hours, 3)
-            return dt.replace(minute=0, second=0, microsecond=0, hour=rounded_hours)
+            add_days, set_hours = divmod(rounded_hours, 24)
+            dt += datetime.timedelta(days=add_days)
+            return dt.replace(minute=0, second=0, microsecond=0, hour=set_hours)
 
         now_update = time.process_time()
         if self.last_update is None or now_update - self.last_update > self.refresh_rate:

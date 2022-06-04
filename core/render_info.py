@@ -71,9 +71,15 @@ def _cycle_embed() -> None:
 
     old_embed = embed # to fix threading errors
     embed = embed_cache[embed_index]
-    embed.on_enable()
+    try:
+        embed.on_enable()
+    except Exception as e:
+        logging.dump_crash_exception(e)
     if old_embed is not None:
-        old_embed.on_disable()
+        try:
+            old_embed.on_disable()
+        except Exception as e:
+            logging.dump_crash_exception(e)
 
     cycle_embed_timer = threading.Timer(embed.duration(), _cycle_embed)
     cycle_embed_timer.name = generate_thread_id("EmbedCycleTimer_")
