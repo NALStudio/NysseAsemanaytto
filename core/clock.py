@@ -53,11 +53,31 @@ def tick(framerate: int = 0):
     delta_time = milliseconds / 1000
 
 def get_fps(round_to_digits: int | None = None) -> float:
-    """Compute the clock framerate (in frames per second) by averaging the last ten calls to clock.tick()."""
+    """Compute the clock framerate (in frames per second) by averaging the last ten calls to `clock.tick()`."""
     fps = _clock.get_fps()
     if round_to_digits is not None:
         fps = _math.round_away_from_zero_to_digits(fps, round_to_digits)
     return fps
+
+def get_frametime(round_to_digits: int | None = None) -> float:
+    """
+    The number of milliseconds that passed between the previous two calls to `clock.tick()`.
+    Includes any time used by `clock.tick()` on delaying to target framerate.
+    """
+    frametime = _clock.get_time()
+    if round_to_digits is not None:
+        frametime = _math.round_away_from_zero_to_digits(frametime, round_to_digits)
+    return frametime
+
+def get_raw_frametime(round_to_digits: int | None = None) -> float:
+    """
+    The number of milliseconds that passed between the previous two calls to `clock.tick()`.
+    Does not include any time used by `clock.tick()`.
+    """
+    frametime = _clock.get_rawtime()
+    if round_to_digits is not None:
+        frametime = _math.round_away_from_zero_to_digits(frametime, round_to_digits)
+    return frametime
 
 def sleep(seconds: float): # Using seconds to future-proof this in-case we switch clocks to nanosecond accuracy etc.
     """

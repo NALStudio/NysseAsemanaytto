@@ -97,15 +97,16 @@ def init():
     #endregion
 
 
-def dump_exception(exception: Exception) -> None:
+def dump_exception(exception: Exception, thread: threading.Thread | None = None, note: str | None = None) -> None:
     """Dumps the an exception into a file"""
-    dump_exception_with_params(type(exception), exception, exception.__traceback__)
+    dump_exception_with_params(type(exception), exception, exception.__traceback__, thread, note)
 
-def dump_exception_with_params(exc_type: type[BaseException], exc_value: BaseException | None, exc_traceback: types.TracebackType | None, thread: threading.Thread | None = None) -> None:
+def dump_exception_with_params(exc_type: type[BaseException], exc_value: BaseException | None, exc_traceback: types.TracebackType | None, thread: threading.Thread | None = None, note: str | None = None) -> None:
     """Dumps the an exception into a file using specified parameters"""
     crashtime: str = _datetime.now().strftime(_logfile_time_format)
     thread_prefix: str = f"thread({thread.name})_" if thread is not None else ""
-    filename = _os.path.join(LOGGING_DIRECTORY, f"{thread_prefix}{_crashfile_prefix}{crashtime}{_crashfile_extension}")
+    note_prefix: str = f"{note}_" if note is not None else ""
+    filename = _os.path.join(LOGGING_DIRECTORY, f"{note_prefix}{thread_prefix}{_crashfile_prefix}{crashtime}{_crashfile_extension}")
     exc: list[str]
     try:
         exc = _traceback.format_exception(exc_type, exc_value, exc_traceback)

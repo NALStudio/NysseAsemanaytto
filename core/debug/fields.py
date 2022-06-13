@@ -8,9 +8,9 @@ def get_fields(*custom_fields: tuple[str, object]) -> list[tuple[str, object]]:
     global _custom
     fields = [
         ("FPS", clock.get_fps(3)),
-        ("Profiler", "enabled" if debug.profiler.is_enabled() else "disabled"),
         *custom_fields,
-        *_custom
+        *_custom,
+        ("Profiler", "enabled" if debug.profiler.is_enabled() else "disabled")
     ]
     _custom.clear()
     return fields
