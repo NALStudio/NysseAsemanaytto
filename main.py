@@ -133,8 +133,8 @@ def main():
         #region Debug
         if debug.enabled:
             fields = debug.get_fields(
-                ("Frametime", f"{clock.get_frametime(3):.2f}"),
-                ("Raw Frametime", f"{clock.get_raw_frametime(3):.2f}")
+                ("Frametime", f"{clock.get_frametime(3):.2f} ms"),
+                ("Raw Frametime", f"{clock.get_raw_frametime(3):.2f} ms")
             )
 
             font = debugFont.get_size(10)
