@@ -1,7 +1,7 @@
 # interesting pull: https://github.com/pygame/pygame/pull/2411
 import pygame.time as _time
 
-from core import math as _math
+from nalpy import math as _math
 
 
 #region Tested custom clock because pygame clock is inaccurate, but didn't seem to help

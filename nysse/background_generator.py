@@ -1,7 +1,7 @@
 from core.colors import NysseColors
 import pygame
 import pygame.gfxdraw
-from core import math
+from nalpy import math
 
 def generateBackground(px_size: tuple[int, int]):
     surf = pygame.Surface(px_size)

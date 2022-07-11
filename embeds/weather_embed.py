@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import embeds
-from core import math, weather_handler, colors, font_helper, logging
+from nalpy import math
+from core import weather_handler, colors, font_helper, logging
 import pygame
 import time
 from typing import Iterable, Sequence

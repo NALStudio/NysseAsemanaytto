@@ -12,7 +12,7 @@ import pygame as _pygame
 
 from sys import version_info as _python_version
 from datetime import datetime as _datetime
-from core import console_utils as _console_utils
+from nalpy import console_utils as _console_utils
 
 LOGGING_DIRECTORY = "./logs"
 

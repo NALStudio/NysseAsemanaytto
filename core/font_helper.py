@@ -1,4 +1,4 @@
-from core import math
+from nalpy import math
 from core import logging
 from typing import Generator, Iterable, NamedTuple, Sequence
 import pygame
