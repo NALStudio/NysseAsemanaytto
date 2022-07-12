@@ -2,3 +2,4 @@ psutil==5.9.0
 pygame==2.1.2
 requests==2.27.1
 fmiopendata==0.3.4
+git+https://github.com/NALStudio/NALPy.git
