@@ -27,14 +27,25 @@ def render_stoptime(px_size: tuple[int, int], stoptime: Stoptime) -> pygame.Surf
     now = datetime.datetime.now()
     if departure < now:
         departure = now
-    stop_time_text: str
-    if stoptime.realtime and stoptime.realtimeState != RealtimeState.SCHEDULED:
+    departure_time_text: str
+    if stoptime.realtime == True and stoptime.realtimeState not in (RealtimeState.SCHEDULED, RealtimeState.CANCELED):
         departure_diff = departure - now
-        stop_time_text = str(round(departure_diff.seconds / 60))
+        departure_time_text = str(round(departure_diff.seconds / 60))
     else:
-        stop_time_text = departure.strftime(core.renderers.time.TIMEFORMAT)
+        departure_time_text = departure.strftime(core.renderers.time.TIMEFORMAT)
 
-    departure_render = font_bold.get_size(font_height).render(stop_time_text, True, Colors.WHITE)
-    surf.blit(departure_render, (px_size[0] - departure_render.get_width(), px_size[1] // 2 - departure_render.get_height() // 2))
+    departure_time_render = font_bold.get_size(font_height).render(departure_time_text, True, Colors.WHITE)
+    # render strikethrough if canceled.
+    if stoptime.realtimeState == RealtimeState.CANCELED:
+        departure_time_size = departure_time_render.get_size()
+        strikethrough_y = round(departure_time_size[1] / 2)
+        strikethrough_w = max(round(departure_time_size[1] / 14), 1)
+        pygame.draw.line(
+            departure_time_render, Colors.WHITE,
+            (0, strikethrough_y), (departure_time_size[0], strikethrough_y),
+            strikethrough_w
+        )
+
+    surf.blit(departure_time_render, (px_size[0] - departure_time_render.get_width(), px_size[1] // 2 - departure_time_render.get_height() // 2))
 
     return surf
