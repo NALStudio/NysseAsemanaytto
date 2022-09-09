@@ -35,6 +35,8 @@ class AlertEmbed(embeds.Embed):
         self.last_update: float | None = None
         self.enable_time: float | None = None
 
+        self.no_alerts_render_cache: tuple[pygame.font.Font, pygame.surface.Surface, tuple[int, int]] | None = None
+
     def on_enable(self):
         now_update = time.process_time()
         self.enable_time = now_update
@@ -113,8 +115,12 @@ class AlertEmbed(embeds.Embed):
 
         # No alerts
         if len(filtered_alerts) < 1:
-            no_alerts = font.render("Ei häiriöitä Nyssen toiminnassa.", True, (80, 80, 80))
-            surface.blit(no_alerts, (surface_size[0] / 2 - no_alerts.get_width() / 2, surface_size[1] / 2 - no_alerts.get_height() / 2))
+            if self.no_alerts_render_cache is None or self.no_alerts_render_cache[0] != font:
+                logging.debug("Rendering new no alerts text...", stack_info=False)
+                no_alerts_render = font.render("Ei häiriöitä Nyssen toiminnassa.", True, (80, 80, 80))
+                self.no_alerts_render_cache = (font, no_alerts_render, no_alerts_render.get_size())
+
+            surface.blit(self.no_alerts_render_cache[1], (surface_size[0] / 2 - self.no_alerts_render_cache[2][0] / 2, surface_size[1] / 2 - self.no_alerts_render_cache[2][1] / 2))
             return
 
         # DEBUG:
