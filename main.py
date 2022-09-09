@@ -2,6 +2,7 @@ import os
 import threading
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
+import psutil
 
 from core import logging
 from core import colors
@@ -66,7 +67,9 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.KEYUP:
-                if event.key == pygame.K_F3:
+                if event.key == pygame.K_F2:
+                    debug.process_enabled = not debug.process_enabled
+                elif event.key == pygame.K_F3:
                     debug.enabled = not debug.enabled
                 elif event.key == pygame.K_F4:
                     if debug.profiler.is_enabled():
@@ -132,9 +135,16 @@ def main():
 
         #region Debug
         if debug.enabled:
+            memory_usage_msg: str = "disabled"
+            if debug.process_enabled:
+                process = psutil.Process(os.getpid())
+                memory_full_info = process.memory_full_info()
+                memory_usage_msg = f"{memory_full_info.uss / 1_048_576:.1f} MB ({(memory_full_info.rss / psutil.virtual_memory().available) * 100:.1f} %)"
+
             fields = debug.get_fields(
                 ("Frametime", f"{clock.get_frametime(3):.2f} ms"),
-                ("Raw Frametime", f"{clock.get_raw_frametime(3):.2f} ms")
+                ("Raw Frametime", f"{clock.get_raw_frametime(3):.2f} ms"),
+                ("Memory Usage", memory_usage_msg)
             )
 
             font = debugFont.get_size(10)

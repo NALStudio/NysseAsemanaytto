@@ -4,3 +4,4 @@ from core.debug.fields import get_fields as get_fields
 from core.debug import profiler as profiler
 
 enabled: bool = False
+process_enabled: bool = False
