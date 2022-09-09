@@ -1,6 +1,6 @@
 from nalpy import math
 from core import logging
-from typing import Generator, Iterable, NamedTuple, Sequence
+from typing import Iterable, NamedTuple
 import pygame
 
 class SizedFont:
