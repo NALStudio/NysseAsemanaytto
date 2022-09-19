@@ -1,5 +1,6 @@
 ### Custom ###
 config.json
+logs/
 ###        ###
 
 # Byte-compiled / optimized / DLL files
