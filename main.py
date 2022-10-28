@@ -136,18 +136,27 @@ def main():
         #region Debug
         if debug.enabled:
             memory_usage_msg: str = "disabled"
+            thread_count_msg: str = "disabled"
+
+            thread_fields: list[tuple[str, object]] = []
             if debug.process_enabled:
                 process = psutil.Process(os.getpid())
                 memory_full_info = process.memory_full_info()
                 memory_usage_msg = f"{memory_full_info.uss / 1_048_576:.1f} MB ({(memory_full_info.rss / psutil.virtual_memory().available) * 100:.1f} %)"
 
+                for thread in threading.enumerate():
+                    thread_fields.append((f"    {thread.name}", thread.ident))
+                thread_count_msg = str(len(thread_fields))
+
             fields = debug.get_fields(
                 ("Frametime", f"{clock.get_frametime(3):.2f} ms"),
                 ("Raw Frametime", f"{clock.get_raw_frametime(3):.2f} ms"),
-                ("Memory Usage", memory_usage_msg)
+                ("Memory Usage", memory_usage_msg),
+                (f"Threads", thread_count_msg),
+                *thread_fields
             )
 
-            font = debugFont.get_size(10)
+            font = debugFont.get_size(14)
             renders = [
                 font.render(f"{name}: {value}", True, colors.Colors.WHITE)
                 for name, value in fields
