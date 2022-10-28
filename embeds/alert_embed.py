@@ -1,10 +1,11 @@
 from __future__ import annotations
 import threading
+from typing import NamedTuple
 
 import embeds
 import digitransit.routing
 import time
-from core import colors, config, font_helper, render_info, logging
+from core import colors, config, font_helper, render_info, logging, testing
 import pygame
 
 alert_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Regular.ttf", "alert rendering")
@@ -103,8 +104,9 @@ class AlertEmbed(embeds.Embed):
         surface_size: tuple[int, int] = surface.get_size()
         border_radius = round(surface_size[1] / 15)
         border_width = round(content_spacing / 2)
-        pygame.draw.rect(surface, BACKGROUND_COLOR, (0, 0, *surface_size), border_radius=border_radius)
-        pygame.draw.rect(surface, BORDER_COLOR, (0, 0, *surface_size), border_width, border_radius=border_radius)
+        border_rect: tuple[int, int, int, int] = (0, 0, *surface_size)
+        pygame.draw.rect(surface, BACKGROUND_COLOR, border_rect, border_radius=border_radius)
+        pygame.draw.rect(surface, BORDER_COLOR, border_rect, border_width, border_radius=border_radius)
 
         filtered_alerts: list[digitransit.routing.Alert] | None = self.filtered_alerts # Value is set before if-check due to threading
         if filtered_alerts is None:
@@ -116,7 +118,6 @@ class AlertEmbed(embeds.Embed):
         # No alerts
         if len(filtered_alerts) < 1:
             if self.no_alerts_render_cache is None or self.no_alerts_render_cache[0] != font:
-                logging.debug("Rendering new no alerts text...", stack_info=False)
                 no_alerts_render = font.render("Ei häiriöitä Nyssen toiminnassa.", True, (80, 80, 80))
                 self.no_alerts_render_cache = (font, no_alerts_render, no_alerts_render.get_size())
 
