@@ -24,7 +24,7 @@ def _stop_info_update_digitransit() -> None:
     try:
         stopinfo = digitransit.routing.get_stop_info(config.current.endpoint, get_stop_gtfsId(), config.current.departure_count)
     except Exception as e:
-        logging.dump_exception(e, fetch_stopinfo_timer)
+        logging.dump_exception(e, fetch_stopinfo_timer, "requestFail")
     if config.current.poll_rate > 0:
         fetch_stopinfo_timer = threading.Timer(config.current.poll_rate, _stop_info_update_digitransit)
         fetch_stopinfo_timer.name = generate_thread_id("StopInfoTimer_")
@@ -74,12 +74,12 @@ def _cycle_embed() -> None:
     try:
         embed.on_enable()
     except Exception as e:
-        logging.dump_exception(e, cycle_embed_timer)
+        logging.dump_exception(e, cycle_embed_timer, "embedEnableFail")
     if old_embed is not None:
         try:
             old_embed.on_disable()
         except Exception as e:
-            logging.dump_exception(e, cycle_embed_timer)
+            logging.dump_exception(e, cycle_embed_timer, "embedDisableFail")
 
     cycle_embed_timer = threading.Timer(embed.duration(), _cycle_embed)
     cycle_embed_timer.name = generate_thread_id("EmbedCycleTimer_")
