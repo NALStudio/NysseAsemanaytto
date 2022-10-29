@@ -1,5 +1,5 @@
 from nalpy import math
-from core import logging
+from core import logging, testing
 from typing import Iterable, NamedTuple
 import pygame
 
@@ -71,13 +71,8 @@ def render_page(font: pygame.font.Font, page: Page, antialias: bool, color: tupl
             y: int = i * linesize
             yield render, (0, y)
 
-    surf: pygame.Surface
-    if background:
-        surf = pygame.Surface(page.size)
-        surf.fill(background)
-    else:
-        surf = pygame.Surface(page.size, pygame.SRCALPHA)
-
+    # faster to create an alpha surface than a non-alpha surface with filled background
+    surf: pygame.Surface = pygame.Surface(page.size, pygame.SRCALPHA)
     surf.blits(list(render_generator()))
 
     return surf

@@ -162,7 +162,7 @@ class AlertEmbed(embeds.Embed):
             surface.blit(page_index_render, (surface_size[0] - page_index_render.get_width() - content_spacing, content_spacing))
 
         # Text body
-        page_render = font_helper.render_page(font, pages[page_index], True, colors.Colors.BLACK)
+        page_render = font_helper.render_page(font, pages[page_index], True, colors.Colors.BLACK, BACKGROUND_COLOR)
         surface.blit(page_render, text_rect.topleft)
 
 

@@ -1,4 +1,4 @@
-from typing import Final, Self, TypeGuard
+from typing import Final, Self
 from datetime import timedelta
 from time import perf_counter_ns
 
