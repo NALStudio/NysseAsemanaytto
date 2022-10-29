@@ -29,11 +29,6 @@ def render_stoptime(px_size: tuple[int, int], stoptime: Stoptime, current_time: 
     font_height: int = px_size[1] - round(px_size[1] / 3)
 
     #region Departure Data
-    if line_data_render_cache_size != px_size:
-        logging.debug("Clearing line data render cache...", stack_info=False)
-        line_data_render_cache.clear()
-        line_data_render_cache_size = px_size
-
     assert stoptime.trip is not None
     shortname = stoptime.trip.route.shortName
     headsign = stoptime.headsign
@@ -41,8 +36,13 @@ def render_stoptime(px_size: tuple[int, int], stoptime: Stoptime, current_time: 
     assert headsign is not None
     line_cache_key: tuple[str, str] = (shortname, headsign)
 
+    if line_data_render_cache_size != px_size:
+        logging.debug("Clearing line data render cache...", stack_info=False)
+        line_data_render_cache.clear()
+        line_data_render_cache_size = px_size
+
     if line_cache_key not in line_data_render_cache:
-        logging.debug(f"Rendering data for line: ({shortname}: {headsign})...")
+        logging.debug(f"Rendering data for line: {line_cache_key}...", stack_info=False)
         line_data_render_cache[line_cache_key] = _render_line_data(px_size, font_height, shortname, headsign)
     data_surf: pygame.Surface = line_data_render_cache[line_cache_key].copy()
     #endregion
