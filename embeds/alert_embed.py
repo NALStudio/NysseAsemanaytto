@@ -118,6 +118,7 @@ class AlertEmbed(embeds.Embed):
         # No alerts
         if len(filtered_alerts) < 1:
             if self.no_alerts_render_cache is None or self.no_alerts_render_cache[0] != font:
+                logging.debug("Rendering new no alerts message...")
                 no_alerts_render = font.render("Ei häiriöitä Nyssen toiminnassa.", True, (80, 80, 80))
                 self.no_alerts_render_cache = (font, no_alerts_render, no_alerts_render.get_size())
 
