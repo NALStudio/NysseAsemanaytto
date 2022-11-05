@@ -1,4 +1,4 @@
-# NysseAsemanaytto
+# Nysse Asemanäyttö
 
 ### A configurable copy of Nysse's bus/tram stop display.
 
