@@ -1,6 +1,6 @@
 # NysseAsemanaytto
 
-### A configurable copy of Nysse's busstop display.
+### A configurable copy of Nysse's bus/tram stop display.
 
 The script will generate a template config on first launch of the application.
 
