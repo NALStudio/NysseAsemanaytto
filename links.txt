@@ -1,3 +1,4 @@
 Nysse style: https://www.nysse.fi/tietoa/tyyliopas/logo-ja-visuaalinen-ilme.html
 Nysse pictograms: https://www.nysse.fi/media/piktogrammit_svg/liikennevalineet/ratikka.svg
+Nysse icons: https://www.nysse.fi/media/layout/img/icons/white/icon-pysakki-white.svg
 Nysse hidden free Lota Grotesque font download: https://www.nysse.fi/media/tyyliopas/nysse-uusi-fontti-lotagrotesque-160119.zip

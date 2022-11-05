@@ -14,7 +14,7 @@ def render_stopinfo(px_size: tuple[int, int], stopinfo: Stop) -> pygame.Surface:
     target_icon_size: int = round(px_size[1] / 1.75)
     if stop_icon is None or stop_icon.get_height() != target_icon_size:
         logging.debug("Loading new icon for stop info rendering...", stack_info=False)
-        stop_icon = pygame.image.load("resources/textures/pictograms/pysakki.png")
+        stop_icon = pygame.image.load("resources/textures/icons/pysakki.png")
         stop_icon = pygame.transform.smoothscale(stop_icon, (target_icon_size, target_icon_size)).convert_alpha()
 
     surf = pygame.Surface(px_size, pygame.SRCALPHA)
