@@ -17,7 +17,7 @@ class WeatherEmbed(embeds.Embed):
         self.fmi_place: str = args[0]
         assert isinstance(self.fmi_place, str), "First argument must be a Finnish Meteorological Institute place string!"
 
-        self.refresh_rate: float = 3600.0
+        self.refresh_rate: float = 3600.0 # seconds
 
         self.last_update: float | None = None
         self.weather: list[weather_handler.Weather] | None = None
@@ -38,8 +38,8 @@ class WeatherEmbed(embeds.Embed):
             dt += datetime.timedelta(days=add_days)
             return dt.replace(minute=0, second=0, microsecond=0, hour=set_hours)
 
-        now_update = time.process_time()
-        if self.last_update is None or now_update - self.last_update > self.refresh_rate:
+        now_update = time.time()
+        if self.last_update is None or (now_update - self.last_update) > self.refresh_rate:
             logging.info(f"Loading new weather data... ({self.fmi_place})", stack_info=False)
 
             starttime = round_to_nearest_third_hour(datetime.datetime.utcnow())
@@ -98,7 +98,7 @@ class WeatherEmbed(embeds.Embed):
 
         self.cached_weather_surface = surface
 
-    def render(self, surface: pygame.Surface, content_spacing: int):
+    def render(self, surface: pygame.Surface, content_spacing: int, progress: float):
         target_size: tuple[int, int] = surface.get_size()
 
         if self.cached_weather_surface is None or self.cached_weather_surface.get_size() != target_size:
@@ -162,6 +162,5 @@ class WeatherEmbed(embeds.Embed):
     def name() -> str:
         return "weather"
 
-    @staticmethod
-    def duration() -> float:
+    def requested_duration(self) -> float:
         return 15.0

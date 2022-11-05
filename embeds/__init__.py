@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import datetime
 import pygame
 
 class Embed(ABC):
@@ -15,7 +16,7 @@ class Embed(ABC):
         pass
 
     @abstractmethod
-    def render(self, surface: pygame.Surface, content_spacing: int):
+    def render(self, surface: pygame.Surface, content_spacing: int, progress: float):
         pass
 
     @staticmethod
@@ -23,9 +24,8 @@ class Embed(ABC):
     def name() -> str:
         raise NotImplementedError("Embed name must be implemented!")
 
-    @staticmethod
     @abstractmethod
-    def duration() -> float:
+    def requested_duration(self) -> float:
         raise NotImplementedError("Embed duration must be implemented!")
 
 

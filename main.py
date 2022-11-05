@@ -5,15 +5,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import psutil
 
-from core import logging
-from core import colors
-from core import renderers
-from core import config
-from core import render_info
-from core import font_helper
-from core import debug
-from core import clock
-from core import thread_exception_handler
+from core import logging, colors, renderers, config, render_info, font_helper, debug, clock, thread_exception_handler
 
 def main():
     #region Initialization
@@ -57,10 +49,11 @@ def main():
     running: bool = True
     while running:
         #region Render params
-        display_size = display.get_size()
-        content_width = display_size[0] - display_size[0] // 8
-        content_offset = (display_size[0] - content_width) // 2
-        content_spacing = round(content_offset * 0.3)
+        display_size: tuple[int, int] = display.get_size()
+        content_width: int = display_size[0] - (display_size[0] // 8)
+        content_offset: int = (display_size[0] - content_width) // 2
+        content_spacing: int = round(content_offset * 0.3)
+        current_time: datetime.datetime = datetime.datetime.now()
         #endregion
 
         #region Event handling
@@ -80,23 +73,22 @@ def main():
         #endregion
 
         #region Header
-        header_rect = pygame.Rect(content_offset, content_offset, content_width, display_size[0] / 13)
+        header_rect: pygame.Rect = pygame.Rect(content_offset, content_offset, content_width, display_size[0] / 13)
         assert render_info.stopinfo.vehicleMode is not None
-        display.blit(renderers.header.render_header(header_rect.size, render_info.stopinfo.vehicleMode), header_rect.topleft)
+        display.blit(renderers.header.render_header(header_rect.size, render_info.stopinfo.vehicleMode, current_time.time()), header_rect.topleft)
         #endregion
 
         #region Stop Info
-        stop_info_rect = pygame.Rect(content_offset, header_rect.bottom + content_spacing * 2, content_width, display_size[0] / 9)
+        stop_info_rect: pygame.Rect = pygame.Rect(content_offset, header_rect.bottom + content_spacing * 2, content_width, display_size[0] / 9)
         display.blit(renderers.stop_info.render_stopinfo(stop_info_rect.size, render_info.stopinfo), stop_info_rect.topleft)
         #endregion
 
         #region Stoptimes
-        stoptime_height = stop_info_rect.height
-        stoptime_y_index = 0
-        stoptime_i = 0
-        last_stoptime_y = -1
+        stoptime_height: int = stop_info_rect.height
+        stoptime_y_index: int = 0
+        stoptime_i: int = 0
+        last_stoptime_y: float | None = None
         assert render_info.stopinfo.stoptimes is not None
-        current_time = datetime.datetime.now()
         while stoptime_i < len(render_info.stopinfo.stoptimes) and ((stoptime_y_index < config.current.visible_count) if config.current.visible_count is not None else True):
             stoptime = render_info.stopinfo.stoptimes[stoptime_i]
             if stoptime.headsign not in config.current.ignore_headsigns:
@@ -110,25 +102,30 @@ def main():
         #endregion
 
         #region Footer
-        footer_rect = pygame.Rect(content_offset, -1, content_width, display_size[0] / 13)
+        footer_rect: pygame.Rect = pygame.Rect(content_offset, -1, content_width, display_size[0] / 13)
         footer_rect.y = display_size[1] - content_offset - footer_rect.height
         display.blit(renderers.footer.render_footer(footer_rect.size), footer_rect.topleft)
         #endregion
 
         #region Embeds
-        if render_info.embed is not None:
-            embed_y = last_stoptime_y + stoptime_height + (2 * content_spacing)
-            embed_height = footer_rect.y - embed_y - content_spacing
-            embed_rect = pygame.Rect(0, embed_y, display_size[0], embed_height)
-            if embed_rect.size[0] <= 0 or embed_rect.size[1] <= 0:
-                logging.error("Window height too small for embed!")
-            else:
-                if embed_surf is None or embed_surf.get_size() != embed_rect.size:
-                    logging.debug("Creating embed surface...", stack_info=False)
-                    embed_surf = pygame.Surface(embed_rect.size, pygame.SRCALPHA)
-                embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
-                render_info.embed.render(embed_surf, content_spacing)
-                display.blit(embed_surf, embed_rect.topleft)
+        assert last_stoptime_y is not None
+        embed_y: int = round(last_stoptime_y) + stoptime_height + (2 * content_spacing)
+        embed_height: int = footer_rect.y - embed_y - content_spacing
+        embed_rect: pygame.Rect = pygame.Rect(0, embed_y, display_size[0], embed_height)
+        if embed_surf is None or embed_surf.get_size() != embed_rect.size:
+            logging.debug("Creating embed surface...", stack_info=False)
+            embed_surf = pygame.Surface(embed_rect.size, pygame.SRCALPHA)
+            embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
+
+        with render_info.current_embed_data_lock:
+            embed_data: render_info.CurrentEmbedData | None = render_info.current_embed_data
+            if embed_data is not None:
+                if embed_rect.size[0] <= 0 or embed_rect.size[1] <= 0:
+                    logging.error("Window height too small for embed!")
+                else:
+                    embed_on_duration: float = current_time.timestamp() - embed_data.enabled_posix_timestamp
+                    embed_data.embed.render(embed_surf, content_spacing, (embed_on_duration / embed_data.requested_duration))
+                    display.blit(embed_surf, embed_rect.topleft)
         #endregion
 
         #region Debug
@@ -171,11 +168,11 @@ def main():
         #endregion
 
         #region Display update
+        pygame.display.flip()
+
         # NOTE: Assuming no animations are present which need accurate framerate timing and not clock.tick inaccuracies.
-        # NOTE: Before pygame.display.flip, because input latency is not a worry. If we would take any inputs, we should put this after display flip.
         clock.tick(config.current.framerate)
 
-        pygame.display.flip()
         background: pygame.Surface = renderers.background.render_background(display_size)
         assert background.get_size() == display_size
         display.blit(background, (0, 0))

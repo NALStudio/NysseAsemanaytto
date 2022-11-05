@@ -1,11 +1,13 @@
 from __future__ import annotations
+import datetime
 import threading
+import time
 from typing import NamedTuple
 
 import embeds
 import digitransit.routing
-import time
-from core import colors, config, font_helper, render_info, logging, testing
+from core import colors, config, font_helper, render_info, logging
+from nalpy import math
 import pygame
 
 alert_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Regular.ttf", "alert rendering")
@@ -13,10 +15,10 @@ page_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSa
 
 class AlertEmbed(embeds.Embed):
     def __init__(self, *args: str):
-        assert len(args) >= 3, "Invalid argument count!"
+        assert len(args) >= 5, "Invalid argument count!"
 
         self.poll_rate: int = int(args[0])
-        assert isinstance(self.poll_rate, int), "First argument must be an integer defining alert poll rate! (Recommended: 300)"
+        assert isinstance(self.poll_rate, int), "First argument must be an integer defining alert poll rate seconds! (Recommended: 300)"
 
         self.include_global: bool = bool(int(args[1]))
         assert isinstance(self.include_global, bool), "Second argument must be an integer 0 or 1 defining if global alerts should be included!"
@@ -24,25 +26,22 @@ class AlertEmbed(embeds.Embed):
         self.include_local: bool = bool(int(args[2]))
         assert isinstance(self.include_local, bool), "Third argument must be an integer 0 or 1 defining if alerts of routes which include displayed stop should be included!"
 
-        self.remove_duplicates: bool = False
-        if len(args) >= 4:
-            self.remove_duplicates = bool(int(args[3]))
-            assert isinstance(self.remove_duplicates, bool), "Fourth argument must be an integer 0 or 1 defining if duplicate alerts should be removed!"
+        self.remove_duplicates: bool = bool(int(args[3]))
+        assert isinstance(self.remove_duplicates, bool), "Fourth argument must be an integer 0 or 1 defining if duplicate alerts should be removed!"
 
+        self.display_if_no_alerts: bool = bool(int(args[4]))
+        assert isinstance(self.display_if_no_alerts, bool), "Fifth argument must be an integer 0 or 1 defining if alert window should be displayed if there are no alerts active!"
 
         self.alerts: list[digitransit.routing.Alert] | None = None
         self.filtered_alerts: list[digitransit.routing.Alert] | None = None
         self.alert_index: int = 0
         self.last_update: float | None = None
-        self.enable_time: float | None = None
 
         self.no_alerts_render_cache: tuple[pygame.font.Font, pygame.Surface, tuple[int, int]] | None = None
 
     def on_enable(self):
-        now_update = time.process_time()
-        self.enable_time = now_update
-
-        if self.last_update is None or now_update - self.last_update > self.poll_rate:
+        now_update: float = time.time()
+        if self.last_update is None or (now_update - self.last_update) > self.poll_rate:
             logging.info(f"Loading new alert data...", stack_info=False)
 
             threading.Thread(target=self.load_and_filter_alerts, name="AlertsFetch").start()
@@ -66,7 +65,6 @@ class AlertEmbed(embeds.Embed):
 
     def on_disable(self):
         self.alert_index += 1
-        self.enable_time = None # Probably not needed, but if something goes wrong this will force a crash instead of running half broken
 
     def _alert_meets_filter_requirements(self, alert: digitransit.routing.Alert) -> bool:
         def alert_is_global(alert: digitransit.routing.Alert) -> bool:
@@ -97,7 +95,7 @@ class AlertEmbed(embeds.Embed):
 
         return True # Passed all checks
 
-    def render(self, surface: pygame.Surface, content_spacing: int):
+    def render(self, surface: pygame.Surface, content_spacing: int, progress: float):
         BACKGROUND_COLOR = colors.Colors.WHITE
         BORDER_COLOR = colors.NysseColors.RATIKANPUNAINEN
 
@@ -142,15 +140,8 @@ class AlertEmbed(embeds.Embed):
         pages: list[font_helper.Page] = list(font_helper.pagination(font, alert.alertDescriptionText, text_rect.size))
         page_count = len(pages)
 
-        time_per_page: float = self.duration() / page_count
-        time_elapsed: float
-        if self.enable_time is not None: # FUCK THREADING
-            time_elapsed = time.process_time() - self.enable_time
-        else:
-            logging.warning("Alert embed enable time is None!")
-            time_elapsed = time_per_page * page_count
-
-        page_index = int(time_elapsed / time_per_page)
+        page_index = int(math.lerp(0, page_count + 1, progress))
+        page_index = min(page_index, page_count)
         if page_index >= page_count: # It is possible that the page index is greater than the number of pages at the end of the embed cycle.
             if page_index > page_count: # If the page index is 2 or more over the amount of pages, warn the user.
                 logging.debug(f"Alert page index {page_index - (page_count - 1)} over the maximum page index.", stack_info=False)
@@ -170,6 +161,5 @@ class AlertEmbed(embeds.Embed):
     def name() -> str:
         return "alerts"
 
-    @staticmethod
-    def duration() -> float:
-        return 15.0
+    def requested_duration(self) -> float:
+        return -1.0 if self.display_if_no_alerts and self.filtered_alerts is not None and len(self.filtered_alerts) < 1 else 15.0

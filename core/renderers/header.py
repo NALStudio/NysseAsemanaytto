@@ -1,3 +1,4 @@
+import datetime
 import pygame
 import pygame.image
 import pygame.surface
@@ -10,7 +11,7 @@ from core import logging
 transport_icon: pygame.Surface | None = None
 nysse_logo: pygame.Surface | None = None
 
-def render_header(px_size: tuple[int, int], vehicleMode: Mode) -> pygame.Surface:
+def render_header(px_size: tuple[int, int], vehicleMode: Mode, time: datetime.time) -> pygame.Surface:
     global transport_icon, nysse_logo
     if transport_icon is None or transport_icon.get_height() != px_size[1]:
         logging.debug("Loading new transport icon for header...", stack_info=False)
@@ -33,7 +34,7 @@ def render_header(px_size: tuple[int, int], vehicleMode: Mode) -> pygame.Surface
 
     surf.blit(nysse_logo, (px_size[0] // 5, px_size[1] // 2 - nysse_logo.get_height() // 2))
 
-    time_render = time_renderer.render_time(px_size[1])
+    time_render = time_renderer.render_time(px_size[1], time)
     surf.blit(time_render, (px_size[0] - time_render.get_width(), px_size[1] - time_render.get_height())) # Height aligned from bottom because font has whitespace above each letter
 
     return surf

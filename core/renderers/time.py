@@ -9,10 +9,7 @@ font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.t
 
 TIMEFORMAT = "%H:%M"
 
-def render_time(px_height: int, time: datetime.time | None = None, color: tuple[int, int, int] = Colors.WHITE) -> pygame.Surface:
-    global font, font_height
-    if time is None:
-        time = datetime.datetime.now().time()
-
+def render_time(px_height: int, time: datetime.time, color: tuple[int, int, int] = Colors.WHITE) -> pygame.Surface:
+    global font
     timeStr = time.strftime(TIMEFORMAT)
     return font.get_size(px_height).render(timeStr, True, color)
