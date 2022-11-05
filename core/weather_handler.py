@@ -20,8 +20,8 @@ class WeatherFetchParams:
     duration: datetime.timedelta
     timestep_minutes: int | None = None
 
-_cached_symbols: dict[int, pygame.surface.Surface] = {}
-def get_weather_symbol(symbol_id: int) -> pygame.surface.Surface:
+_cached_symbols: dict[int, pygame.Surface] = {}
+def get_weather_symbol(symbol_id: int) -> pygame.Surface:
     """
     Get the texture of the weather symbol.
     """

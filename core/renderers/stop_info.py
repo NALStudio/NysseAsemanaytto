@@ -5,7 +5,7 @@ import pygame
 
 font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.ttf", "stop info rendering")
 
-stop_icon: pygame.surface.Surface | None = None
+stop_icon: pygame.Surface | None = None
 
 def render_stopinfo(px_size: tuple[int, int], stopinfo: Stop) -> pygame.Surface:
     global font, stop_icon

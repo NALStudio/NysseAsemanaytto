@@ -63,7 +63,7 @@ def pagination(font: pygame.font.Font, text: str, page_size: tuple[int, int]) ->
         yield Page(page_index, page_size, page_lines)
 
 def render_page(font: pygame.font.Font, page: Page, antialias: bool, color: tuple[int, int, int], background: tuple[int, int, int] | None = None) -> pygame.Surface:
-    def render_generator() -> Iterable[tuple[pygame.surface.Surface, tuple[int, int]]]:
+    def render_generator() -> Iterable[tuple[pygame.Surface, tuple[int, int]]]:
         linesize: int = font.get_linesize()
 
         for i, line in enumerate(page.lines):

@@ -3,7 +3,7 @@ import pygame
 import pygame.surface
 import pygame.image
 
-def load_pictogram_by_mode(mode: Mode) -> pygame.surface.Surface | None:
+def load_pictogram_by_mode(mode: Mode) -> pygame.Surface | None:
     lookup = {
         Mode.BUS: "bussi.png",
         Mode.BICYCLE: "kaupunkipyora.png",

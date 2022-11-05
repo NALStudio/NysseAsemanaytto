@@ -7,8 +7,8 @@ import core.renderers.time as time_renderer
 from digitransit.enums import Mode
 from core import logging
 
-transport_icon: pygame.surface.Surface | None = None
-nysse_logo: pygame.surface.Surface | None = None
+transport_icon: pygame.Surface | None = None
+nysse_logo: pygame.Surface | None = None
 
 def render_header(px_size: tuple[int, int], vehicleMode: Mode) -> pygame.Surface:
     global transport_icon, nysse_logo

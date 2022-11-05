@@ -7,9 +7,9 @@ from core.colors import Colors
 from core import logging
 
 nyssefi_font_height: int | None = None
-nyssefi_text: pygame.surface.Surface | None = None
+nyssefi_text: pygame.Surface | None = None
 
-footer_pictograms: pygame.surface.Surface | None = None
+footer_pictograms: pygame.Surface | None = None
 
 cached_footer: pygame.Surface | None = None
 

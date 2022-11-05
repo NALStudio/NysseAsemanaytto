@@ -79,10 +79,6 @@ def main():
                         debug.profiler.enable()
         #endregion
 
-        #region Background
-        display.blit(renderers.background.render_background(display_size), (0, 0))
-        #endregion
-
         #region Header
         header_rect = pygame.Rect(content_offset, content_offset, content_width, display_size[0] / 13)
         assert render_info.stopinfo.vehicleMode is not None
@@ -166,10 +162,10 @@ def main():
 
             width = max(renders, key=lambda render: render.get_width()).get_width()
             height = len(renders) * font.get_linesize()
-            background = pygame.surface.Surface((width, height))
-            background.set_alpha(128)
+            debug_background: pygame.Surface = pygame.Surface((width, height))
+            debug_background.set_alpha(128)
 
-            display.blit(background, (0, 0))
+            display.blit(debug_background, (0, 0))
             for i, render in enumerate(renders):
                 display.blit(render, (0, i * font.get_linesize()))
         #endregion
@@ -180,7 +176,9 @@ def main():
         clock.tick(config.current.framerate)
 
         pygame.display.flip()
-        display.fill(colors.Colors.BLACK)
+        background: pygame.Surface = renderers.background.render_background(display_size)
+        assert background.get_size() == display_size
+        display.blit(background, (0, 0))
         #endregion
 
     quit()

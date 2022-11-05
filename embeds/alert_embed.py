@@ -36,7 +36,7 @@ class AlertEmbed(embeds.Embed):
         self.last_update: float | None = None
         self.enable_time: float | None = None
 
-        self.no_alerts_render_cache: tuple[pygame.font.Font, pygame.surface.Surface, tuple[int, int]] | None = None
+        self.no_alerts_render_cache: tuple[pygame.font.Font, pygame.Surface, tuple[int, int]] | None = None
 
     def on_enable(self):
         now_update = time.process_time()
