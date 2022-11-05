@@ -115,7 +115,7 @@ def main():
         if embed_surf is None or embed_surf.get_size() != embed_rect.size:
             logging.debug("Creating embed surface...", stack_info=False)
             embed_surf = pygame.Surface(embed_rect.size, pygame.SRCALPHA)
-            embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
+        embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
 
         with render_info.current_embed_data_lock:
             embed_data: render_info.CurrentEmbedData | None = render_info.current_embed_data
