@@ -165,4 +165,4 @@ class AlertEmbed(embeds.Embed):
         return "alerts"
 
     def requested_duration(self) -> float:
-        return -1.0 if self.display_if_no_alerts and self.filtered_alerts is not None and len(self.filtered_alerts) < 1 else 15.0
+        return -1.0 if not self.display_if_no_alerts and self.filtered_alerts is not None and len(self.filtered_alerts) < 1 else 15.0

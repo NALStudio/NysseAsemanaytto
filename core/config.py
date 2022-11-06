@@ -1,15 +1,18 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from types import UnionType
-from typing import get_type_hints, get_args
+import typing
 
-from core import colors
 from core import logging
 
 import re
 import json
 import os
 
+RequiredT = typing.TypeVar('RequiredT', bound=object)
+class Required(typing.NamedTuple, typing.Generic[RequiredT]):
+    value: RequiredT | None
+NotDefined = Required(None)
 
 @dataclass
 class Config:
@@ -20,11 +23,14 @@ class Config:
     visible_count: int | None = None
     poll_rate: int = 30
     endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
-    window_size: tuple[int, int] = (360, 640) # Value loaded from json is a list
+    window_size: list[int] = field(default_factory=lambda: [360, 640]) # Value loaded from json is a list
     fullscreen: bool = False
     framerate: int = -1
     hide_mouse: bool = True
     enabled_embeds: list[str] = field(default_factory=list)
+
+    client_id: Required[str] = NotDefined
+    client_secret: Required[str] = NotDefined
 
 
     @classmethod
@@ -75,14 +81,16 @@ class Config:
     def save(config: Config, config_path: str) -> None:
         default = Config()
 
-        to_save: dict[str, str | int | float | bool] = {}
+        to_save: dict[str, str | int | float | bool | None] = {}
         for k, v in config.__dict__.items():
             if k.startswith("_"):
                 continue
-            if getattr(default, k) == v:  # If value is same as default
+            default_value: typing.Any = getattr(default, k)
+            if default_value == v and default_value is not NotDefined:  # If value is same as default
                 continue
+            selected_save: str | int | float | bool | None = v if default_value is not NotDefined else None
 
-            to_save[k] = v
+            to_save[k] = selected_save
 
         with open(config_path, "w", encoding="utf-8") as f:
             json_str = json.dumps(to_save, indent=4)
@@ -96,14 +104,17 @@ class Config:
             if k.startswith("_"):
                 continue
 
-            typehint: type | UnionType = get_type_hints(Config)[k]
+            typehint: type | UnionType = typing.get_type_hints(Config)[k]
             typename = typehint.__name__ if not isinstance(typehint, UnionType) else str(typehint)
-            typeargs: tuple[type, ...] = get_args(typehint) if not isinstance(typehint, UnionType) else tuple()
+            typeargs: tuple[type, ...] = typing.get_args(typehint) if not isinstance(typehint, UnionType) else tuple()
             if len(typeargs) > 0:
-                typeargstrings = [targ.__name__ for targ in typeargs]
+                typeargstrings = [targ.__name__ for targ in typeargs if not isinstance(targ, Required)]
                 typename += f"<{', '.join(typeargstrings)}>"
-            typename = typename.replace("None", "null")
-            out += f"\n{k}: {typename} (Default: {json.dumps(v)})"
+            typename = typename.replace("None", "null").replace("core.config.Required", "REQUIRED")
+            default: str | None = json.dumps(v) if v is not NotDefined else None
+            out += f"\n{k}: {typename}"
+            if default is not None:
+                out += f" (Default: {default})"
 
         return out
 
