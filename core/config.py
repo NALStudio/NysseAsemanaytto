@@ -100,13 +100,14 @@ class Config:
         default = Config()
 
         to_save: dict[str, str | int | float | bool | None] = {}
-        for k, v in config.__dict__.items():
+        for k in default.__dict__.keys():
             if k.startswith("_"):
                 continue
             default_value: Any = getattr(default, k)
-            if default_value == v and default_value is not NotDefined:  # If value is same as default
+            current_value: Any = getattr(config, k)
+            if default_value == current_value and default_value is not NotDefined:  # If value is same as default
                 continue
-            selected_save: str | int | float | bool | None = v if default_value is not NotDefined else None
+            selected_save: str | int | float | bool | None = current_value if default_value is not NotDefined else None
 
             to_save[k] = selected_save
 
