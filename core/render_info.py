@@ -21,7 +21,7 @@ def _stop_info_update_digitransit() -> None:
     global stopinfo, fetch_stopinfo_timer
     logging.info("Fetching stop info...", stack_info=False)
     try:
-        stopinfo = digitransit.routing.get_stop_info(config.current.endpoint, get_stop_gtfsId(), config.current.departure_count)
+        stopinfo = digitransit.routing.get_stop_info(config.current.endpoint, get_stop_gtfsId(), config.current.departure_count, config.current.omit_non_pickups)
     except Exception as e:
         logging.dump_exception(e, fetch_stopinfo_timer, "requestFail")
     if config.current.poll_rate > 0:
