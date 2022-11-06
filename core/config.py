@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from types import UnionType
-import typing
+from typing import Annotated, Any, Generic, NamedTuple, TypeVar, get_args, get_type_hints
 
 from core import logging
 
@@ -9,8 +9,8 @@ import re
 import json
 import os
 
-RequiredT = typing.TypeVar('RequiredT', bound=object)
-class Required(typing.NamedTuple, typing.Generic[RequiredT]):
+RequiredT = TypeVar('RequiredT', bound=object)
+class Required(NamedTuple, Generic[RequiredT]):
     value: RequiredT | None
 NotDefined = Required(None)
 
@@ -18,19 +18,37 @@ NotDefined = Required(None)
 class Config:
 
     stopcode: int = 3522
-    ignore_headsigns: list[str] = field(default_factory=list)
-    departure_count: int = 10
-    visible_count: int | None = None
-    poll_rate: int = 30
-    endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
-    window_size: list[int] = field(default_factory=lambda: [360, 640]) # Value loaded from json is a list
-    fullscreen: bool = False
-    framerate: int = -1
-    hide_mouse: bool = True
-    enabled_embeds: list[str] = field(default_factory=list)
+    """A number (i.e. `3522`). If stopcode includes any leading zeros, strip them (i.e. `0825` => `825`)."""
 
-    client_id: Required[str] = NotDefined
-    client_secret: Required[str] = NotDefined
+    departure_count: int = 10
+    """A number that determines how many departures to fetch."""
+
+    omit_non_pickups: bool = True
+    """Only show departures where boarding is allowed."""
+
+    poll_rate: int = 30
+    """How often to refresh the departure data. Waits the specified amount of seconds between requests. (If you are not self-hosting the server, you should avoid doing more than 10 requests per second to reduce load on Digitransit's servers.)"""
+
+    endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
+    """The Digitransit API endpoint you want to send requests to. Can be targeted to a server hosted locally."""
+
+    window_size: tuple[int, int] = (360, 640) # Value loaded from json is a list
+    """The size of the window"""
+
+    fullscreen: bool = False
+    """Fullscreen? (fullscreen resolution is defined by `window_size`)"""
+
+    framerate: int = -1
+    """Limit the window refresh rate. (`-1` to disable limit)"""
+
+    hide_mouse: bool = True
+    """Hide mouse when over window."""
+
+    enabled_embeds: list[str] = field(default_factory=list)
+    """A janky way to enable embeds. Will be improved upon later... At least I hope so."""
+
+    # client_id: Required[str] = NotDefined
+    # client_secret: Required[str] = NotDefined
 
 
     @classmethod
@@ -85,7 +103,7 @@ class Config:
         for k, v in config.__dict__.items():
             if k.startswith("_"):
                 continue
-            default_value: typing.Any = getattr(default, k)
+            default_value: Any = getattr(default, k)
             if default_value == v and default_value is not NotDefined:  # If value is same as default
                 continue
             selected_save: str | int | float | bool | None = v if default_value is not NotDefined else None
@@ -100,13 +118,14 @@ class Config:
     @staticmethod
     def _generate_available_settings() -> str:
         out = "Available settings (json):\n"
-        for k, v in Config().__dict__.items():
+        default_instance: Config = Config()
+        for k, v in default_instance.__dict__.items():
             if k.startswith("_"):
                 continue
 
-            typehint: type | UnionType = typing.get_type_hints(Config)[k]
+            typehint: type | UnionType = get_type_hints(Config, include_extras=True)[k]
             typename = typehint.__name__ if not isinstance(typehint, UnionType) else str(typehint)
-            typeargs: tuple[type, ...] = typing.get_args(typehint) if not isinstance(typehint, UnionType) else tuple()
+            typeargs: tuple[type, ...] = get_args(typehint) if not isinstance(typehint, UnionType) else tuple()
             if len(typeargs) > 0:
                 typeargstrings = [targ.__name__ for targ in typeargs if not isinstance(targ, Required)]
                 typename += f"<{', '.join(typeargstrings)}>"

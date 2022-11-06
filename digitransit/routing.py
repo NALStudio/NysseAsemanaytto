@@ -55,13 +55,13 @@ class Trip:
         self.route: Route = Route(**route)
 
 
-def get_stop_info(endpoint: str, stop_gtfsId: str, numberOfDepartures: int | None = None) -> Stop:
+def get_stop_info(endpoint: str, stop_gtfsId: str, numberOfDepartures: int | None = None, omitNonPickups: bool | None = None) -> Stop:
     query = """{
-  stop(id: "STOPID") {
+  stop(STOPARGS) {
     gtfsId
     name
     vehicleMode
-    stoptimesWithoutPatternsNUMDEPARTS {
+    stoptimesWithoutPatterns(TIMESARGS) {
       scheduledArrival
       realtimeArrival
       arrivalDelay
@@ -84,13 +84,15 @@ def get_stop_info(endpoint: str, stop_gtfsId: str, numberOfDepartures: int | Non
     }
   }
 }
-""".replace("STOPID", stop_gtfsId).replace("NUMDEPARTS", f"(numberOfDepartures: {numberOfDepartures})" if numberOfDepartures is not None else "")
+"""
+    query = _replace_with_arguments(query, "(STOPARGS)", ("id", stop_gtfsId))
+    query = _replace_with_arguments(query, "(TIMESARGS)", ("numberOfDepartures", numberOfDepartures), ("omitNonPickups", omitNonPickups))
 
     return _make_request(endpoint, query, "stop", Stop)
 
 def get_alerts(endpoint: str, feeds: list[str] | tuple[str, ...]) -> list[Alert]: # Apparently Sequence[str] allows the user to put in a bare string
     query = """{
-  alerts(feeds: [FEEDS]) {
+  alerts(ALERTSARGS) {
     feed
     alertHeaderText
     alertDescriptionText
@@ -112,7 +114,8 @@ def get_alerts(endpoint: str, feeds: list[str] | tuple[str, ...]) -> list[Alert]
     }
   }
 }
-""".replace("FEEDS", ",".join(f"\"{feed}\"" for feed in feeds))
+"""
+    query = _replace_with_arguments(query, "(ALERTSARGS)", ("feeds", feeds))
 
     def constructor(data: dict[str, list[dict[str, Any]]]) -> list[Alert]:
         return [Alert(**params) for params in data["alerts"]]
@@ -134,3 +137,20 @@ def _make_request(endpoint: str, query: str, expected_data_key: str | None, cons
       raise ValueError(f"No data found! Expected data with key: {expected_data_key}. Response below:\n{response.content}")
 
     return constructor(**keydata)
+
+def _replace_with_arguments(query: str, keyword: str, *args: tuple[str, object | None]) -> str:
+    """None argument value is default."""
+    formatted_args: list[str] = []
+    for name, value in args:
+        if value is None:
+            continue
+        formatted_value: str = json.dumps(value, indent=None)
+        formatted_args.append(f"{name}:{formatted_value}")
+
+    output: str
+    if len(formatted_args) > 0:
+        output = f"({','.join(formatted_args)})"
+    else:
+        output = ""
+
+    return query.replace(keyword, output)
