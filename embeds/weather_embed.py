@@ -98,7 +98,7 @@ class WeatherEmbed(embeds.Embed):
 
         self.cached_weather_surface = surface
 
-    def render(self, surface: pygame.Surface, content_spacing: int, progress: float):
+    def render(self, surface: pygame.Surface, content_spacing: int, approx_datetime: datetime.datetime, progress: float):
         target_size: tuple[int, int] = surface.get_size()
 
         if self.cached_weather_surface is None or self.cached_weather_surface.get_size() != target_size:

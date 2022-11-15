@@ -3,7 +3,7 @@ import pygame
 import pygame.image
 import pygame.surface
 import pygame.transform
-import nysse.pictogram
+import nysse.styles
 import core.renderers.time as time_renderer
 from digitransit.enums import Mode
 from core import logging
@@ -15,7 +15,7 @@ def render_header(px_size: tuple[int, int], vehicleMode: Mode, time: datetime.ti
     global transport_icon, nysse_logo
     if transport_icon is None or transport_icon.get_height() != px_size[1]:
         logging.debug("Loading new transport icon for header...", stack_info=False)
-        transport_icon = nysse.pictogram.load_pictogram_by_mode(vehicleMode)
+        transport_icon = nysse.styles.load_pictogram_by_mode(vehicleMode)
         if transport_icon is not None:
             transport_icon = pygame.transform.smoothscale(transport_icon, (px_size[1], px_size[1])).convert_alpha()
         else:

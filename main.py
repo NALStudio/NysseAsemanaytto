@@ -117,7 +117,7 @@ def main():
                     logging.error("Window height too small for embed!")
                 else:
                     embed_on_duration: float = current_time.timestamp() - embed_data.enabled_posix_timestamp
-                    embed_data.embed.render(embed_surf, content_spacing, (embed_on_duration / embed_data.requested_duration))
+                    embed_data.embed.render(embed_surf, content_spacing, current_time, (embed_on_duration / embed_data.requested_duration))
                     display.blit(embed_surf, embed_rect.topleft)
         #endregion
 

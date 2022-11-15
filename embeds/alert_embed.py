@@ -95,7 +95,7 @@ class AlertEmbed(embeds.Embed):
 
         return True # Passed all checks
 
-    def render(self, surface: pygame.Surface, content_spacing: int, progress: float):
+    def render(self, surface: pygame.Surface, content_spacing: int, approx_datetime: datetime.datetime, progress: float):
         BACKGROUND_COLOR = colors.Colors.WHITE
         BORDER_COLOR = colors.NysseColors.RATIKANPUNAINEN
 

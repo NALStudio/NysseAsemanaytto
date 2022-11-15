@@ -26,6 +26,9 @@ class Config:
     omit_non_pickups: bool = True
     """Only show departures where boarding is allowed."""
 
+    omit_canceled: bool = False
+    """Hide canceled departures."""
+
     poll_rate: int = 30
     """How often to refresh the departure data. Waits the specified amount of seconds between requests. (If you are not self-hosting the server, you should avoid doing more than 10 requests per second to reduce load on Digitransit's servers.)"""
 
@@ -46,6 +49,12 @@ class Config:
 
     enabled_embeds: list[str] = field(default_factory=list)
     """A janky way to enable embeds. Will be improved upon later... At least I hope so."""
+
+    nysse_api_client_id: str | None = None
+    """Nysse API client id to enable advanced features. Instructions: http://dev.publictransport.tampere.fi/getting-started"""
+
+    nysse_api_client_secret: str | None = None
+    """Nysse API client secret to enable advanced features. Instructions: http://dev.publictransport.tampere.fi/getting-started"""
 
     # client_id: Required[str] = NotDefined
     # client_secret: Required[str] = NotDefined

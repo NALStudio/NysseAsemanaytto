@@ -16,7 +16,7 @@ class Embed(ABC):
         pass
 
     @abstractmethod
-    def render(self, surface: pygame.Surface, content_spacing: int, progress: float):
+    def render(self, surface: pygame.Surface, content_spacing: int, approx_datetime: datetime.datetime, progress: float):
         pass
 
     @staticmethod
@@ -32,8 +32,10 @@ class Embed(ABC):
 
 from embeds.alert_embed import AlertEmbed
 from embeds.weather_embed import WeatherEmbed
+from embeds.line_embed import LineEmbed
 
 ALL_EMBEDS: tuple[type[Embed], ...] = (
     WeatherEmbed,
-    AlertEmbed
+    AlertEmbed,
+    LineEmbed
 )
