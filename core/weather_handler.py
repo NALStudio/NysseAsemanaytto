@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 import datetime
 import threading
-import time as time_module
 import fmiopendata.multipoint
-from typing import Any, Callable, Generator, Iterable
+from typing import Any, Callable, Iterable
+
+from core import datetime_utils
 
 import pygame
 
@@ -37,11 +38,6 @@ def get_weather(fmi_place: str, params: WeatherFetchParams, on_finish: Callable[
     request_thread = threading.Thread(target=provider.get_weather, name=f"WeatherRequest_{fmi_place}")
     request_thread.start()
 
-def _utc2local(utc: datetime.datetime) -> datetime.datetime:
-    epoch = time_module.mktime(utc.timetuple())
-    offset = datetime.datetime.fromtimestamp(epoch) - datetime.datetime.utcfromtimestamp(epoch)
-    return utc + offset
-
 class _WeatherRequestProvider: # HACK: Passing arguments on thread start ignores type checking.
     def __init__(self, fmi_place: str, params: WeatherFetchParams, on_finish: Callable[[tuple[Weather]], Any]) -> None:
         self.fmi_place: str = fmi_place
@@ -71,7 +67,7 @@ class _WeatherRequestProvider: # HACK: Passing arguments on thread start ignores
             assert isinstance(symbol, float)
             symbol = int(symbol)
 
-            local_time = _utc2local(time) # Slow to call each parsing, but this shit is threaded anyways :D
+            local_time = datetime_utils.utc2local(time) # Slow to call each parsing, but this shit is threaded anyways :D
             wt = Weather(time, local_time, temperature, symbol)
             yield wt
 

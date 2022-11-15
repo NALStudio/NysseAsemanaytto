@@ -2,13 +2,20 @@ from __future__ import annotations
 
 import embeds
 from nalpy import math
-from core import weather_handler, colors, font_helper, logging
+from core import weather_handler, colors, font_helper, logging, datetime_utils
 import pygame
 import time
 from typing import Iterable, Sequence
 import datetime
 
 BACKGROUND_COLOR = colors.Colors.WHITE
+
+def _round_datetime_to_nearest_third_hour(dt: datetime.datetime):
+    total_hours: float = dt.hour + dt.minute / 60.0
+    rounded_hours: int = math.round_to_nearest_n(total_hours, 3)
+    add_days, set_hours = divmod(rounded_hours, 24)
+    dt += datetime.timedelta(days=add_days)
+    return dt.replace(minute=0, second=0, microsecond=0, hour=set_hours)
 
 class WeatherEmbed(embeds.Embed):
     def __init__(self, *args: str):
@@ -31,20 +38,14 @@ class WeatherEmbed(embeds.Embed):
         self.cached_weather_surface = None # Force re-rendering of the weather data.
 
     def on_enable(self):
-        def round_to_nearest_third_hour(dt: datetime.datetime):
-            total_hours: float = dt.hour + dt.minute / 60.0
-            rounded_hours: int = math.round_to_nearest_n(total_hours, 3)
-            add_days, set_hours = divmod(rounded_hours, 24)
-            dt += datetime.timedelta(days=add_days)
-            return dt.replace(minute=0, second=0, microsecond=0, hour=set_hours)
-
         now_update = time.time()
         if self.last_update is None or (now_update - self.last_update) > self.refresh_rate:
             logging.info(f"Loading new weather data... ({self.fmi_place})", stack_info=False)
 
-            starttime = round_to_nearest_third_hour(datetime.datetime.utcnow())
+            starttime_local = _round_datetime_to_nearest_third_hour(datetime.datetime.now())
+            starttime_utc = datetime_utils.local2utc(starttime_local)
             duration = datetime.timedelta(hours=self.hour_count)
-            params = weather_handler.WeatherFetchParams(starttime, duration, 3 * 60)
+            params = weather_handler.WeatherFetchParams(starttime_utc, duration, 3 * 60)
             weather_handler.get_weather(self.fmi_place, params, self._set_weather)
             self.last_update = now_update
             # Not adding difference but rather setting the value
