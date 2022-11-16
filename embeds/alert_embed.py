@@ -140,11 +140,10 @@ class AlertEmbed(embeds.Embed):
         pages: list[font_helper.Page] = list(font_helper.pagination(font, alert.alertDescriptionText, text_rect.size))
         page_count = len(pages)
 
-        page_index = int(math.lerp(0, page_count + 1, progress))
-        page_index = min(page_index, page_count)
+        page_index = int(math.lerp(0, page_count + 1, progress)) # get page index by flooring interpolated value
         if page_index >= page_count: # It is possible that the page index is greater than the number of pages at the end of the embed cycle.
             if page_index > page_count: # If the page index is 2 or more over the amount of pages, warn the user.
-                logging.debug(f"Alert page index {page_index - (page_count - 1)} over the maximum page index.", stack_info=False)
+                logging.warning(f"Alert page index {page_index - (page_count - 1)} over the maximum page index.", stack_info=False)
             page_index = page_count - 1
 
         # Page index
