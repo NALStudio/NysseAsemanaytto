@@ -5,46 +5,13 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import psutil
 
-from core import logging, colors, renderers, config, render_info, font_helper, debug, clock, thread_exception_handler
+from core import logging, colors, renderers, config, render_info, sized_assets, debug, clock, thread_exception_handler
 
 def main():
-    #region Initialization
-    logging.init()
+    display = init()
 
-    threading.excepthook = thread_exception_handler.thread_excepthook
-
-    logging.debug("Loading config...", stack_info=False)
-    config.init()
-    logging.debug("Config loaded.", stack_info=False)
-
-    logging.debug("Starting stop info thread...", stack_info=False)
-    render_info.start_stop_info_fetch()
-    logging.debug("Stop info thread started.", stack_info=False)
-
-    logging.debug("Starting embeds cycling thread...", stack_info=False)
-    render_info.start_embed_cycling()
-    logging.debug("Embeds cycling thread started.", stack_info=False)
-
-    logging.debug("Creating window...", stack_info=False)
-    pygame.init()
-    pygame.display.set_caption("Nysse Asemanäyttö")
-    pygame.display.set_icon(pygame.image.load("resources/textures/icon.png"))
-    display_flags = pygame.RESIZABLE
-    if config.current.fullscreen:
-        display_flags |= pygame.FULLSCREEN
-    display = pygame.display.set_mode(config.current.window_size, display_flags)
     embed_surf: pygame.Surface | None = None
-    logging.debug("Window created.", stack_info=False)
-
-    logging.debug("Initializing variables...", stack_info=False)
-    debugFont: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "debug")
-    logging.debug("Variables initialized.", stack_info=False)
-
-    pygame.mouse.set_visible(not config.current.hide_mouse)
-    logging.info(f"Mouse visibility: {pygame.mouse.get_visible()}", stack_info=False)
-
-    logging.info("Initialization Finished!", stack_info=False)
-    #endregion
+    debugFont: sized_assets.SizedFont = sized_assets.SizedFont("resources/fonts/Lato-Regular.ttf", "debug")
 
     running: bool = True
     while running:
@@ -172,6 +139,42 @@ def main():
         #endregion
 
     quit()
+
+def init() -> pygame.Surface:
+    #region Initialization
+    logging.init()
+
+    threading.excepthook = thread_exception_handler.thread_excepthook
+
+    logging.debug("Loading config...", stack_info=False)
+    config.init()
+    logging.debug("Config loaded.", stack_info=False)
+
+    logging.debug("Starting stop info thread...", stack_info=False)
+    render_info.start_stop_info_fetch()
+    logging.debug("Stop info thread started.", stack_info=False)
+
+    logging.debug("Starting embeds cycling thread...", stack_info=False)
+    render_info.start_embed_cycling()
+    logging.debug("Embeds cycling thread started.", stack_info=False)
+
+    logging.debug("Creating window...", stack_info=False)
+    pygame.init()
+    pygame.display.set_caption("Nysse Asemanäyttö")
+    pygame.display.set_icon(pygame.image.load("resources/textures/icon.png"))
+    display_flags = pygame.RESIZABLE
+    if config.current.fullscreen:
+        display_flags |= pygame.FULLSCREEN
+    display = pygame.display.set_mode(config.current.window_size, display_flags)
+    logging.debug("Window created.", stack_info=False)
+
+    pygame.mouse.set_visible(not config.current.hide_mouse)
+    logging.info(f"Mouse visibility: {pygame.mouse.get_visible()}", stack_info=False)
+
+    logging.info("Initialization Finished!", stack_info=False)
+    #endregion
+
+    return display
 
 def quit():
     render_info.stop_timers()
