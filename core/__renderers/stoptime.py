@@ -2,7 +2,7 @@ from digitransit.enums import RealtimeState
 from core.colors import Colors
 from core import font_helper, testing, logging
 import pygame
-import core.renderers.time
+import core.__renderers.time
 import pygame.font
 import datetime
 from digitransit.routing import Stoptime
@@ -57,7 +57,7 @@ def render_stoptime(px_size: tuple[int, int], stoptime: Stoptime, current_time: 
         departure_diff = departure - current_time
         departure_time_text = str(round(departure_diff.seconds / 60))
     else:
-        departure_time_text = departure.strftime(core.renderers.time.TIMEFORMAT)
+        departure_time_text = departure.strftime(core.__renderers.time.TIMEFORMAT)
 
     departure_time_render = font_bold.get_size(font_height).render(departure_time_text, True, Colors.WHITE)
     # render strikethrough if canceled.

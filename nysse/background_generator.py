@@ -3,7 +3,7 @@ import pygame
 import pygame.gfxdraw
 from nalpy import math
 
-def generateBackground(px_size: tuple[int, int]):
+def generate_background(px_size: tuple[int, int]) -> pygame.Surface:
     surf = pygame.Surface(px_size)
     surf.fill(NysseColors.KESKISININEN)
 
@@ -16,7 +16,7 @@ def generateBackground(px_size: tuple[int, int]):
 
     points: list[tuple[float, float]] = []
     for iter_x in range(0, round(sine_length * 1.1), 1): # Added some extra x points to fix sine not being long enough
-        p = _generateSine(iter_x, sine_freq, sine_amp)
+        p = _generate_sine(iter_x, sine_freq, sine_amp)
         points.append(p)
 
     # Transform points
@@ -26,7 +26,7 @@ def generateBackground(px_size: tuple[int, int]):
         x -= (sine_length - sine_rect.width) / 2
         y += sine_rect.height / 2
 
-        x, y = _rotatePoint((sine_rect.centerx, sine_rect.centery), (x, y), math.radians(-45.0))
+        x, y = _rotate_point((sine_rect.centerx, sine_rect.centery), (x, y), math.radians(-45.0))
 
         points[i] = (x, y)
 
@@ -39,11 +39,11 @@ def generateBackground(px_size: tuple[int, int]):
     return surf
 
 
-def _generateSine(x: float, wave_frequency: float, wave_amplitude: float) -> tuple[float, float]:
+def _generate_sine(x: float, wave_frequency: float, wave_amplitude: float) -> tuple[float, float]:
     y = wave_amplitude * -math.cos(wave_frequency * x)
     return (x, y)
 
-def _rotatePoint(origin: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
+def _rotate_point(origin: tuple[float, float], point: tuple[float, float], angle: float) -> tuple[float, float]:
     """
     Rotate a point counterclockwise by a given angle around a given origin.
 

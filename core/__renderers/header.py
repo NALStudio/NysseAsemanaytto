@@ -4,7 +4,7 @@ import pygame.image
 import pygame.surface
 import pygame.transform
 import nysse.styles
-import core.renderers.time as time_renderer
+import core.__renderers.time as time_renderer
 from digitransit.enums import Mode
 from core import logging
 

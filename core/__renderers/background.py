@@ -10,6 +10,6 @@ def render_background(px_size: tuple[int, int]) -> pygame.Surface:
 
     if background is None or background.get_size() != px_size:
         logging.debug("Generating new wave for background rendering...", stack_info=False)
-        background = nysse.background_generator.generateBackground(px_size).convert()
+        background = nysse.background_generator.generate_background(px_size).convert()
 
     return background
