@@ -1,2 +1,2 @@
-APP_DISPLAYNAME = "Vierassataman Bono"
+APP_DISPLAYNAME = "Nysse Asemanäyttö"
 APP_ICON_PATH = "resources/textures/icon.png"
