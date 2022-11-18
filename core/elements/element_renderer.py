@@ -13,5 +13,5 @@ class ElementRenderer(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def render(self) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
         raise NotImplementedError()

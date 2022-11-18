@@ -5,3 +5,4 @@ from core.debug import profiler as profiler
 
 enabled: bool = False
 process_enabled: bool = False
+rect_enabled: bool = False

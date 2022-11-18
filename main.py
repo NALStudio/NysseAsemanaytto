@@ -17,9 +17,7 @@ def main():
 
     running: bool = True
     while running:
-        #region Render params
-        current_time: datetime.datetime = datetime.datetime.now()
-        #endregion
+        context: elements.UpdateContext = elements.UpdateContext(datetime.datetime.now())
 
         #region Event handling
         for event in pygame.event.get():
@@ -35,17 +33,25 @@ def main():
                         debug.profiler.disable()
                     elif debug.enabled: # Checking this so someone doesn't accidentally turn it on while playing
                         debug.profiler.enable()
+                elif event.key == pygame.K_F7:
+                    if debug.rect_enabled:
+                        debug.rect_enabled = False
+                        renderer.force_render()
+                    elif debug.enabled:
+                        debug.rect_enabled = True
+                        renderer._reset_debug_colors()
+                        renderer.force_render()
             elif event.type == pygame.WINDOWSIZECHANGED:
-                renderer.size_changed()
+                renderer.force_render()
         #endregion
 
         #region Header
-        assert render_info.stopinfo.vehicleMode is not None
-        renderer.temp_blit(__renderers.header.render_header(element_position_params.header_rect.size, render_info.stopinfo.vehicleMode, current_time.time()), element_position_params.header_rect.topleft)
+        # assert render_info.stopinfo.vehicleMode is not None
+        # renderer.temp_blit(__renderers.header.render_header(element_position_params.header_rect.size, render_info.stopinfo.vehicleMode, current_time.time()), element_position_params.header_rect.topleft)
         #endregion
 
         #region Stop Info
-        renderer.temp_blit(__renderers.stop_info.render_stopinfo(element_position_params.stop_info_rect.size, render_info.stopinfo), element_position_params.stop_info_rect.topleft)
+        # renderer.temp_blit(__renderers.stop_info.render_stopinfo(element_position_params.stop_info_rect.size, render_info.stopinfo), element_position_params.stop_info_rect.topleft)
         #endregion
 
         #region Stoptimes
@@ -53,7 +59,7 @@ def main():
 
         for stoptime_i in range(len(render_info.stopinfo.stoptimes)):
             stoptime_rect = element_position_params.get_stoptime_rect(stoptime_i)
-            renderer.temp_blit(__renderers.stoptime.render_stoptime(stoptime_rect.size, render_info.stopinfo.stoptimes[stoptime_i], current_time), stoptime_rect.topleft)
+            renderer.temp_blit(__renderers.stoptime.render_stoptime(stoptime_rect.size, render_info.stopinfo.stoptimes[stoptime_i], context.time), stoptime_rect.topleft)
         #endregion
 
         #region Footer
@@ -72,8 +78,8 @@ def main():
                 if element_position_params.embed_rect.size[0] <= 0 or element_position_params.embed_rect.size[1] <= 0:
                     logging.error("Window height too small for embed!")
                 else:
-                    embed_on_duration: float = current_time.timestamp() - embed_data.enabled_posix_timestamp
-                    embed_data.embed.render(embed_surf, element_position_params.content_spacing, current_time, (embed_on_duration / embed_data.requested_duration))
+                    embed_on_duration: float = context.time.timestamp() - embed_data.enabled_posix_timestamp
+                    embed_data.embed.render(embed_surf, element_position_params.content_spacing, context.time, (embed_on_duration / embed_data.requested_duration))
                     renderer.temp_blit(embed_surf, element_position_params.embed_rect.topleft)
         #endregion
 
@@ -116,9 +122,15 @@ def main():
                 renderer.temp_blit(render, (0, i * font.get_linesize()))
         #endregion
 
-        renderer.render()
+        renderer.update(context)
+        renderer.render(context.time)
 
     quit()
+
+def initialize_renderers():
+    renderer.add_renderer(elements.HeaderIconsRenderer())
+    renderer.add_renderer(elements.HeaderNysseRenderer())
+    renderer.add_renderer(elements.StopInfoRenderer())
 
 def init():
     #region Initialization
@@ -135,13 +147,15 @@ def init():
     logging.debug("Starting embeds cycling thread...", stack_info=False)
     render_info.start_embed_cycling()
 
-    logging.debug("Initializing window...", stack_info=False)
+    logging.debug("Initializing renderers...", stack_info=False)
+    initialize_renderers()
+
+    logging.debug("Creating window...", stack_info=False)
     pygame.init()
     renderer_flags: int = pygame.RESIZABLE
     if config.current.fullscreen:
         renderer_flags |= pygame.FULLSCREEN
     renderer.init(config.current.window_size, renderer_flags)
-    logging.debug("Window created.", stack_info=False)
 
     pygame.mouse.set_visible(not config.current.hide_mouse)
     logging.info(f"Mouse visibility: {pygame.mouse.get_visible()}", stack_info=False)
