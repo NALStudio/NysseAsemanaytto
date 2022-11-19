@@ -2,7 +2,7 @@ from typing import Any, Callable, NamedTuple, Sequence, TypeVar, Self
 from digitransit.enums import Mode, RealtimeState
 import json
 import requests
-from datetime import datetime
+from datetime import datetime, time
 
 _T = TypeVar("_T")
 
@@ -43,6 +43,41 @@ class Stoptime:
         self.realtimeState: RealtimeState | None = RealtimeState(realtimeState)
         self.headsign: str | None = headsign
         self.trip: Trip | None = Trip(**trip) if trip is not None else None
+
+    #region Unmaintained mock
+    # @classmethod
+    # def mock_bus_departure(cls, departure: datetime, realtime: bool, shortname: str, headsign: str) -> Self:
+    #     date_midnight: datetime = datetime.combine(departure.date(), time(0, 0, 0, 0))
+    #     service_day: int = round(date_midnight.timestamp())
+    #     timestamp: int = round(departure.timestamp()) - service_day
+    #
+    #     mocked = {
+    #         "scheduledArrival": timestamp,
+    #         "realtimeArrival": timestamp,
+    #         "arrivalDelay": 0,
+    #         "scheduledDeparture": timestamp,
+    #         "realtimeDeparture": timestamp,
+    #         "departureDelay": 0,
+    #         "realtime": realtime,
+    #         "realtimeState": "UPDATED",
+    #         "serviceDay": service_day,
+    #         "headsign": headsign,
+    #         "trip": {
+    #             "gtfsId": "<mock>",
+    #             "pattern": {
+    #                 "code": "<mock>"
+    #             },
+    #             "route": {
+    #                 "gtfsId": "<mock>",
+    #                 "shortName": shortname,
+    #                 "longName": f"LONGNAME: {shortname}",
+    #                 "mode": "BUS"
+    #             }
+    #         }
+    #     }
+    #
+    #     return cls(**mocked)
+    #endregion
 
 class Stop:
     def __init__(self, gtfsId: str, name: str, code: str, vehicleMode: str | None, lat: float, lon: float, stoptimesWithoutPatterns: Sequence[dict[str, Any]] | None = None) -> None:

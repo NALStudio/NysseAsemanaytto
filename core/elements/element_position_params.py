@@ -46,3 +46,11 @@ class ElementPositionParams:
         stoptime_y: int = int(stoptime_y_raw)
         return pygame.Rect(self.content_offset, stoptime_y, self.content_width, stoptime_height)
 
+    def get_stoptime_headsign_time_split_x(self, time_font: pygame.font.Font) -> int:
+        stoptime_rect = self.get_stoptime_rect(0)
+        return stoptime_rect.right - time_font.size("00:00")[0] # 0 should be the widest number in Lato font
+
+    @property
+    def stoptime_shortname_headsign_split_x(self) -> int:
+        stoptime_rect = self.get_stoptime_rect(0)
+        return stoptime_rect.left + stoptime_rect.width // 5

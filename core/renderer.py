@@ -27,7 +27,7 @@ def _get_debug_color(renderer: _elements.ElementRenderer) -> tuple[int, int, int
 
     return _renderer_debug_colors[renderer]
 
-def _reset_debug_colors() -> None:
+def reset_debug_colors() -> None:
     _renderer_debug_colors.clear()
 
 _immediate_renders: list[_elements.ElementRenderer] = []
@@ -48,6 +48,9 @@ def init(size: tuple[int, int], flags: int):
 
     _display_surf = _pygame.display.set_mode(size, flags)
     _clock = _pygame.time.Clock()
+
+    for r in _renderers:
+        r.setup()
 
     force_render()
 

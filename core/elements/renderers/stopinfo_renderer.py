@@ -1,17 +1,19 @@
 import pygame
-from core import elements, render_info, font_helper
+from core import elements, font_helper
 from core.colors import Colors
-
-font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.ttf", "stop info rendering")
 
 class StopInfoRenderer(elements.ElementRenderer):
     def __init__(self) -> None:
-        self.stopname: str = render_info.stopinfo.name
+        self.stopname: str = "<error>"
+
+    def setup(self) -> None:
+        self.unscaled_stop_icon = pygame.image.load("resources/textures/icons/pysakki.png").convert_alpha()
+        self.font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Bold.ttf", purpose="stop info rendering")
 
     def update(self, context: elements.UpdateContext) -> bool:
         changes: bool = False
 
-        new_stopname: str = render_info.stopinfo.name
+        new_stopname: str = context.stopinfo.name
         if self.stopname != new_stopname:
             self.stopname = new_stopname
             changes = True
@@ -25,13 +27,12 @@ class StopInfoRenderer(elements.ElementRenderer):
         font_height: int = size[1] - round(size[1] / 3)
 
         icon_size: int = round(size[1] / 1.75)
-        stop_icon = pygame.image.load("resources/textures/icons/pysakki.png")
-        stop_icon = pygame.transform.smoothscale(stop_icon, (icon_size, icon_size)).convert_alpha()
+        stop_icon = pygame.transform.smoothscale(self.unscaled_stop_icon, (icon_size, icon_size))
 
         surf = pygame.Surface(size, pygame.SRCALPHA)
         # DEBUG: surf.fill(Colors.RED)
 
-        stopnamernd = font.get_size(font_height).render(self.stopname, True, Colors.WHITE)
+        stopnamernd = self.font.get_size(font_height).render(self.stopname, True, Colors.WHITE)
         surf.blit(stopnamernd, (0, size[1] // 2 - stopnamernd.get_height() // 2))
         surf.blit(stop_icon, (size[0] - stop_icon.get_width(), size[1] // 2 - stop_icon.get_height() // 2))
 

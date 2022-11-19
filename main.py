@@ -5,7 +5,9 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import psutil
 
-from core import logging, colors, __renderers, config, render_info, font_helper, debug, thread_exception_handler, renderer, elements
+from core import logging, colors, config, render_info, font_helper, debug, thread_exception_handler, renderer, elements
+import copy
+from digitransit.routing import Stoptime
 
 def main():
     init()
@@ -17,7 +19,7 @@ def main():
 
     running: bool = True
     while running:
-        context: elements.UpdateContext = elements.UpdateContext(datetime.datetime.now())
+        context: elements.UpdateContext = elements.UpdateContext(datetime.datetime.now(), render_info.stopinfo)
 
         #region Event handling
         for event in pygame.event.get():
@@ -39,7 +41,7 @@ def main():
                         renderer.force_render()
                     elif debug.enabled:
                         debug.rect_enabled = True
-                        renderer._reset_debug_colors()
+                        renderer.reset_debug_colors()
                         renderer.force_render()
             elif event.type == pygame.WINDOWSIZECHANGED:
                 renderer.force_render()
@@ -55,15 +57,15 @@ def main():
         #endregion
 
         #region Stoptimes
-        assert render_info.stopinfo.stoptimes is not None
-
-        for stoptime_i in range(len(render_info.stopinfo.stoptimes)):
-            stoptime_rect = element_position_params.get_stoptime_rect(stoptime_i)
-            renderer.temp_blit(__renderers.stoptime.render_stoptime(stoptime_rect.size, render_info.stopinfo.stoptimes[stoptime_i], context.time), stoptime_rect.topleft)
+        # assert render_info.stopinfo.stoptimes is not None
+        #
+        # for stoptime_i in range(len(render_info.stopinfo.stoptimes)):
+        #     stoptime_rect = element_position_params.get_stoptime_rect(stoptime_i)
+        #     renderer.temp_blit(__renderers.stoptime.render_stoptime(stoptime_rect.size, render_info.stopinfo.stoptimes[stoptime_i], context.time), stoptime_rect.topleft)
         #endregion
 
         #region Footer
-        renderer.temp_blit(__renderers.footer.render_footer(element_position_params.footer_rect.size), element_position_params.footer_rect.topleft)
+        # renderer.temp_blit(__renderers.footer.render_footer(element_position_params.footer_rect.size), element_position_params.footer_rect.topleft)
         #endregion
 
         #region Embeds
@@ -131,6 +133,17 @@ def initialize_renderers():
     renderer.add_renderer(elements.HeaderIconsRenderer())
     renderer.add_renderer(elements.HeaderNysseRenderer())
     renderer.add_renderer(elements.StopInfoRenderer())
+    renderer.add_renderer(elements.FooterRenderer())
+    renderer.add_renderer(elements.HeaderTimeRenderer())
+
+    for i in range(config.current.departure_count):
+        shortname = elements.StoptimeShortnameRenderer(i)
+        time = elements.StoptimeTimeRenderer(i)
+        headsign = elements.StoptimeHeadsignRenderer(i, shortname, time)
+
+        renderer.add_renderer(shortname)
+        renderer.add_renderer(headsign)
+        renderer.add_renderer(time)
 
 def init():
     #region Initialization
