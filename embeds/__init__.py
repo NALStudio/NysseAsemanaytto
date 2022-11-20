@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import datetime
 import pygame
+from core import elements
 
 class Embed(ABC):
     def __init__(self, *args: str):
@@ -16,8 +17,14 @@ class Embed(ABC):
         pass
 
     @abstractmethod
-    def render(self, surface: pygame.Surface, content_spacing: int, approx_datetime: datetime.datetime, progress: float):
-        pass
+    def update(self, context: elements.UpdateContext, progress: float) -> bool:
+        """Called repeatedly to refresh this embed's data. Return `True` to render this embed with the updated data."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+        """Render this embed onto a surface with the specified size. Return `None` to clear this area of the screen. Return `...` to leave this area of the screen as is and ignore this embed."""
+        raise NotImplementedError()
 
     @staticmethod
     @abstractmethod

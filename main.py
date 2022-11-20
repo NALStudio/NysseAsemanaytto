@@ -74,20 +74,20 @@ def main():
         #endregion
 
         #region Embeds
-        if embed_surf is None or embed_surf.get_size() != temp_element_position_params.embed_rect.size:
-            logging.debug("Creating embed surface...", stack_info=False)
-            embed_surf = pygame.Surface(temp_element_position_params.embed_rect.size, pygame.SRCALPHA)
-        embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
-
-        with render_info.current_embed_data_lock:
-            embed_data: render_info.CurrentEmbedData | None = render_info.current_embed_data
-            if embed_data is not None:
-                if temp_element_position_params.embed_rect.size[0] <= 0 or temp_element_position_params.embed_rect.size[1] <= 0:
-                    logging.error("Window height too small for embed!")
-                else:
-                    embed_on_duration: float = context.time.timestamp() - embed_data.enabled_posix_timestamp
-                    embed_data.embed.render(embed_surf, temp_element_position_params.content_spacing, context.time, (embed_on_duration / embed_data.requested_duration))
-                    renderer.temp_blit(embed_surf, temp_element_position_params.embed_rect.topleft)
+        # if embed_surf is None or embed_surf.get_size() != temp_element_position_params.embed_rect.size:
+        #     logging.debug("Creating embed surface...", stack_info=False)
+        #     embed_surf = pygame.Surface(temp_element_position_params.embed_rect.size, pygame.SRCALPHA)
+        # embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
+        #
+        # with render_info.current_embed_data_lock:
+        #     embed_data: render_info.CurrentEmbedData | None = render_info.current_embed_data
+        #     if embed_data is not None:
+        #         if temp_element_position_params.embed_rect.size[0] <= 0 or temp_element_position_params.embed_rect.size[1] <= 0:
+        #             logging.error("Window height too small for embed!")
+        #         else:
+        #             embed_on_duration: float = context.time.timestamp() - embed_data.enabled_posix_timestamp
+        #             embed_data.embed.render(embed_surf, temp_element_position_params.content_spacing, context.time, (embed_on_duration / embed_data.requested_duration))
+        #             renderer.temp_blit(embed_surf, temp_element_position_params.embed_rect.topleft)
         #endregion
 
         #region Debug
@@ -137,9 +137,11 @@ def main():
 def initialize_renderers():
     renderer.add_renderer(elements.HeaderIconsRenderer())
     renderer.add_renderer(elements.HeaderNysseRenderer())
+    renderer.add_renderer(elements.HeaderTimeRenderer())
+
     renderer.add_renderer(elements.StopInfoRenderer())
     renderer.add_renderer(elements.FooterRenderer())
-    renderer.add_renderer(elements.HeaderTimeRenderer())
+    renderer.add_renderer(elements.EmbedRenderer())
 
     renderer.add_renderer(elements.DebugRenderer())
 

@@ -7,6 +7,7 @@ from core.elements.element_renderer import ElementRenderer as ElementRenderer
 from core.elements.renderers.stopinfo_renderer import StopInfoRenderer as StopInfoRenderer
 from core.elements.renderers.footer_renderer import FooterRenderer as FooterRenderer
 from core.elements.renderers.debug_renderer import DebugRenderer as DebugRenderer
+from core.elements.renderers.embed_renderer import EmbedRenderer as EmbedRenderer
 
 from core.elements.renderers.header.header_icons_renderer import HeaderIconsRenderer as HeaderIconsRenderer
 from core.elements.renderers.header.header_nysse_renderer import HeaderNysseRenderer as HeaderNysseRenderer
