@@ -171,7 +171,7 @@ def _render(render: _pygame.Surface | None, rect: _pygame.Rect, background: _pyg
 
     _display_surf.blit(bkgrnd, rect.topleft)
 
-    if _debug.enabled == True and allow_debug:
+    if _debug.render_enabled == True and allow_debug:
         _pygame.draw.rect(_display_surf, (255, 0, 0), rect)
         return True
 

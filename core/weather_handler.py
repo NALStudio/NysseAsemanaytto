@@ -35,7 +35,7 @@ def get_weather(fmi_place: str, params: WeatherFetchParams, on_finish: Callable[
     Get weather data from FMI.
     """
     provider = _WeatherRequestProvider(fmi_place, params, on_finish)
-    request_thread = threading.Thread(target=provider.get_weather, name=f"WeatherRequest_{fmi_place}")
+    request_thread = threading.Thread(target=provider.get_weather, name=f"WeatherRequest_{fmi_place}", daemon=False)
     request_thread.start()
 
 class _WeatherRequestProvider: # HACK: Passing arguments on thread start ignores type checking.

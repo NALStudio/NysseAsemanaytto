@@ -2,7 +2,6 @@ from __future__ import annotations
 import datetime
 import threading
 import time
-from typing import NamedTuple
 
 import embeds
 import digitransit.routing
@@ -44,7 +43,7 @@ class AlertEmbed(embeds.Embed):
         if self.last_update is None or (now_update - self.last_update) > self.poll_rate:
             logging.info(f"Loading new alert data...", stack_info=False)
 
-            threading.Thread(target=self.load_and_filter_alerts, name="AlertsFetch").start()
+            threading.Thread(target=self.load_and_filter_alerts, name="AlertsFetch", daemon=False).start()
 
             self.last_update = now_update
             # Not adding difference but rather setting the value

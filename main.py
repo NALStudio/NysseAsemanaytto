@@ -5,7 +5,7 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 import psutil
 
-from core import logging, colors, config, render_info, font_helper, debug, thread_exception_handler, renderer, elements
+from core import logging, colors, config, render_info, font_helper, debug, thread_exception_handler, renderer, elements, threadex
 import copy
 from digitransit.routing import Stoptime
 
@@ -15,7 +15,7 @@ def main():
     embed_surf: pygame.Surface | None = None
     debugFont: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "debug")
 
-    element_position_params: elements.ElementPositionParams = elements.ElementPositionParams()
+    temp_element_position_params: elements.ElementPositionParams = elements.ElementPositionParams()
 
     running: bool = True
     while running:
@@ -35,6 +35,11 @@ def main():
                         debug.profiler.disable()
                     elif debug.enabled: # Checking this so someone doesn't accidentally turn it on while playing
                         debug.profiler.enable()
+                elif event.key == pygame.K_F6:
+                    if debug.render_enabled:
+                        debug.render_enabled = False
+                    elif debug.enabled:
+                        debug.render_enabled = True
                 elif event.key == pygame.K_F7:
                     if debug.rect_enabled:
                         debug.rect_enabled = False
@@ -69,59 +74,59 @@ def main():
         #endregion
 
         #region Embeds
-        if embed_surf is None or embed_surf.get_size() != element_position_params.embed_rect.size:
+        if embed_surf is None or embed_surf.get_size() != temp_element_position_params.embed_rect.size:
             logging.debug("Creating embed surface...", stack_info=False)
-            embed_surf = pygame.Surface(element_position_params.embed_rect.size, pygame.SRCALPHA)
+            embed_surf = pygame.Surface(temp_element_position_params.embed_rect.size, pygame.SRCALPHA)
         embed_surf.fill(0)  # Theoritcally could be in an else statement because SRCALPHA will make it transparent by default
 
         with render_info.current_embed_data_lock:
             embed_data: render_info.CurrentEmbedData | None = render_info.current_embed_data
             if embed_data is not None:
-                if element_position_params.embed_rect.size[0] <= 0 or element_position_params.embed_rect.size[1] <= 0:
+                if temp_element_position_params.embed_rect.size[0] <= 0 or temp_element_position_params.embed_rect.size[1] <= 0:
                     logging.error("Window height too small for embed!")
                 else:
                     embed_on_duration: float = context.time.timestamp() - embed_data.enabled_posix_timestamp
-                    embed_data.embed.render(embed_surf, element_position_params.content_spacing, context.time, (embed_on_duration / embed_data.requested_duration))
-                    renderer.temp_blit(embed_surf, element_position_params.embed_rect.topleft)
+                    embed_data.embed.render(embed_surf, temp_element_position_params.content_spacing, context.time, (embed_on_duration / embed_data.requested_duration))
+                    renderer.temp_blit(embed_surf, temp_element_position_params.embed_rect.topleft)
         #endregion
 
         #region Debug
-        if debug.enabled:
-            memory_usage_msg: str = "disabled"
-            thread_count_msg: str = "disabled"
-
-            thread_fields: list[tuple[str, object]] = []
-            if debug.process_enabled:
-                process = psutil.Process(os.getpid())
-                memory_full_info = process.memory_full_info()
-                memory_usage_msg = f"{memory_full_info.uss / 1_048_576:.1f} MB ({(memory_full_info.rss / psutil.virtual_memory().available) * 100:.1f} %)"
-
-                for thread in threading.enumerate():
-                    thread_fields.append((f"    {thread.name}", thread.ident))
-                thread_count_msg = str(len(thread_fields))
-
-            fields = debug.get_fields(
-                ("Frametime", f"{renderer.get_frametime(3):.2f} ms"),
-                ("Raw Frametime", f"{renderer.get_raw_frametime(3):.2f} ms"),
-                ("Memory Usage", memory_usage_msg),
-                (f"Threads", thread_count_msg),
-                *thread_fields
-            )
-
-            font = debugFont.get_size(14)
-            renders = [
-                font.render(f"{name}: {value}", True, colors.Colors.WHITE)
-                for name, value in fields
-            ]
-
-            width = max(renders, key=lambda render: render.get_width()).get_width()
-            height = len(renders) * font.get_linesize()
-            debug_background: pygame.Surface = pygame.Surface((width, height))
-            debug_background.set_alpha(128)
-
-            renderer.temp_blit(debug_background, (0, 0))
-            for i, render in enumerate(renders):
-                renderer.temp_blit(render, (0, i * font.get_linesize()))
+        # if debug.enabled:
+        #     memory_usage_msg: str = "disabled"
+        #     thread_count_msg: str = "disabled"
+        #
+        #     thread_fields: list[tuple[str, object]] = []
+        #     if debug.process_enabled:
+        #         process = psutil.Process(os.getpid())
+        #         memory_full_info = process.memory_full_info()
+        #         memory_usage_msg = f"{memory_full_info.uss / 1_048_576:.1f} MB ({(memory_full_info.rss / psutil.virtual_memory().available) * 100:.1f} %)"
+        #
+        #         for thread in threading.enumerate():
+        #             thread_fields.append((f"    {thread.name}", thread.ident))
+        #         thread_count_msg = str(len(thread_fields))
+        #
+        #     fields = debug.get_fields(
+        #         ("Frametime", f"{renderer.get_frametime(3):.2f} ms"),
+        #         ("Raw Frametime", f"{renderer.get_raw_frametime(3):.2f} ms"),
+        #         ("Memory Usage", memory_usage_msg),
+        #         (f"Threads", thread_count_msg),
+        #         *thread_fields
+        #     )
+        #
+        #     font = debugFont.get_size(14)
+        #     renders = [
+        #         font.render(f"{name}: {value}", True, colors.Colors.WHITE)
+        #         for name, value in fields
+        #     ]
+        #
+        #     width = max(renders, key=lambda render: render.get_width()).get_width()
+        #     height = len(renders) * font.get_linesize()
+        #     debug_background: pygame.Surface = pygame.Surface((width, height))
+        #     debug_background.set_alpha(128)
+        #
+        #     renderer.temp_blit(debug_background, (0, 0))
+        #     for i, render in enumerate(renders):
+        #         renderer.temp_blit(render, (0, i * font.get_linesize()))
         #endregion
 
         renderer.update(context)
@@ -135,6 +140,8 @@ def initialize_renderers():
     renderer.add_renderer(elements.StopInfoRenderer())
     renderer.add_renderer(elements.FooterRenderer())
     renderer.add_renderer(elements.HeaderTimeRenderer())
+
+    renderer.add_renderer(elements.DebugRenderer())
 
     for i in range(config.current.departure_count):
         shortname = elements.StoptimeShortnameRenderer(i)
@@ -154,11 +161,8 @@ def init():
     logging.debug("Loading config...", stack_info=False)
     config.init()
 
-    logging.debug("Starting stop info thread...", stack_info=False)
-    render_info.start_stop_info_fetch()
-
-    logging.debug("Starting embeds cycling thread...", stack_info=False)
-    render_info.start_embed_cycling()
+    logging.debug("Starting timers...", stack_info=False)
+    start_timers()
 
     logging.debug("Initializing renderers...", stack_info=False)
     initialize_renderers()
@@ -176,8 +180,20 @@ def init():
     logging.info("Initialization Finished!", stack_info=False)
     #endregion
 
+timers: list[threadex.RepeatingTimer] = []
+def start_timers():
+    stopinfo = threadex.RepeatingTimer("StopInfoTimer", config.current.poll_rate, render_info.update_stopinfo)
+    timers.append(stopinfo)
+    stopinfo.start_synchronous()
+
+    render_info.start_embed_cycling()
+
 def quit():
-    render_info.stop_timers()
+    for t in timers:
+        t.cancel()
+
+    render_info.stop_embed_cycling()
+
     config.quit()
 
 if __name__ == "__main__":

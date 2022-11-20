@@ -55,7 +55,7 @@ class LineEmbed(embeds.Embed):
 
         self.vehicle_positions = None
         self.rendered_vehicle_positions = None
-        self.vehicle_request_thread = threading.Thread(target=self._get_positions, args=(route_shortname,), name=f"VehicleRequest_{route_shortname}")
+        self.vehicle_request_thread = threading.Thread(target=self._get_positions, args=(route_shortname,), name=f"VehicleRequest_{route_shortname}", daemon=False)
         self.vehicle_request_thread.start()
 
     def _get_positions(self, route_shortname: str):
