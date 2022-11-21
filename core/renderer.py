@@ -13,6 +13,7 @@ class _DeferredRender(_NamedTuple):
     render_time: _datetime.datetime
     surface: _pygame.Surface
     rect: _pygame.Rect
+    flags: _elements.RenderFlags
     debug_color: tuple[int, int, int]
 
 _display_surf: _pygame.Surface
@@ -134,12 +135,13 @@ def render(now: _datetime.datetime, framerate: int = -1):
     render_rects: list[_pygame.Rect] = []
 
     for renderer in _immediate_renders:
+        flags: _elements.RenderFlags = _elements.RenderFlags()
         rect: _pygame.Rect = renderer.get_rect(_element_position_params)
-        rnd: _pygame.Surface | None = renderer.render(rect.size)
+        rnd: _pygame.Surface | None = renderer.render(rect.size, _element_position_params, flags)
         debug_col: tuple[int, int, int] = _get_debug_color(renderer)
         render_rects.append(rect)
-        if _render(rnd, rect, _background, True, debug_col) and rnd is not None:
-            scheduled: _DeferredRender = _DeferredRender(now + _datetime.timedelta(seconds=0.2), rnd, rect, debug_col)
+        if _render(rnd, rect, flags, _background, True, debug_col) and rnd is not None:
+            scheduled: _DeferredRender = _DeferredRender(now + _datetime.timedelta(seconds=0.2), rnd, rect, flags, debug_col)
             _deferred_renders.append(scheduled)
 
     _immediate_renders.clear()
@@ -150,20 +152,14 @@ def render(now: _datetime.datetime, framerate: int = -1):
 
         _deferred_renders.remove(deferred)
         render_rects.append(deferred.rect)
-        append_deferred: bool = _render(deferred.surface, deferred.rect, _background, False, deferred.debug_color)
+        append_deferred: bool = _render(deferred.surface, deferred.rect, deferred.flags, _background, False, deferred.debug_color)
         assert append_deferred == False
 
     _pygame.display.update(render_rects)
     _clock.tick(framerate) # clock.tick after update because no time sensitive functionality after display update
 
-def temp_blit(surface: _pygame.Surface, pos: tuple[int, int]):
-    rect = _pygame.Rect(pos, surface.get_size())
-    timestamp = _datetime.datetime.fromtimestamp(0.0)
-    deferred = _DeferredRender(timestamp, surface, rect, (0, 255, 255))
-    _deferred_renders.append(deferred)
-
-def _render(render: _pygame.Surface | None, rect: _pygame.Rect, background: _pygame.Surface, allow_debug: bool, debug_color: tuple[int, int, int]) -> bool:
-    bkgrnd: _pygame.Surface = background.subsurface(rect)
+def _render(render: _pygame.Surface | None, rect: _pygame.Rect, flags: _elements.RenderFlags, background: _pygame.Surface, allow_debug: bool, debug_color: tuple[int, int, int]) -> bool:
+    bkgrnd: _pygame.Surface = background.subsurface(rect.clip((0, 0, *background.get_size())))
     if _debug.rect_enabled:
         debug_bkgrnd = _pygame.Surface(rect.size)
         debug_bkgrnd.fill(debug_color)
@@ -172,7 +168,8 @@ def _render(render: _pygame.Surface | None, rect: _pygame.Rect, background: _pyg
     _display_surf.blit(bkgrnd, rect.topleft)
 
     if _debug.render_enabled == True and allow_debug:
-        _pygame.draw.rect(_display_surf, (255, 0, 0), rect)
+        render_update_debug_col: tuple[int, int, int] = (255, 0, 0) if flags.clear_background else (0, 0, 255)
+        _pygame.draw.rect(_display_surf, render_update_debug_col, rect)
         return True
 
     if render is not None:

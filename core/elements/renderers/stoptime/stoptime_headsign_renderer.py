@@ -32,7 +32,7 @@ class StoptimeHeadsignRenderer(elements.StoptimeBaseRenderer):
 
         return pygame.Rect(left, stoptime_rect.top, width, height)
 
-    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
         font_height: int = self.get_font_height(size[1])
         line_headsign_render = self.font.get_size(round(font_height * 0.9)).render(self.value, True, colors.Colors.WHITE)
 

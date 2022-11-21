@@ -19,7 +19,7 @@ class HeaderNysseRenderer(elements.ElementRenderer):
 
         return pygame.Rect(x, y, w, h)
 
-    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
         unscaled_logo = self.nysse_logo_unscaled
 
         target_height: int = size[1]

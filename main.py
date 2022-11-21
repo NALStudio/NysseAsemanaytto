@@ -3,11 +3,8 @@ import os
 import threading
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
-import psutil
 
-from core import logging, colors, config, render_info, font_helper, debug, thread_exception_handler, renderer, elements, threadex
-import copy
-from digitransit.routing import Stoptime
+from core import logging, config, render_info, debug, thread_exception_handler, renderer, elements, threadex
 
 def main():
     init()

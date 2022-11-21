@@ -44,7 +44,7 @@ class StoptimeTimeRenderer(elements.StoptimeBaseRenderer):
 
         return pygame.Rect(x, stoptime_rect.top, w, height)
 
-    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
         cancelled: bool = False
         time_str: str = self.value
         if time_str.startswith(CANCELLED_PREFIX):

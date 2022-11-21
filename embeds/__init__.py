@@ -22,7 +22,7 @@ class Embed(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
         """Render this embed onto a surface with the specified size. Return `None` to clear this area of the screen. Return `...` to leave this area of the screen as is and ignore this embed."""
         raise NotImplementedError()
 
@@ -42,7 +42,7 @@ from embeds.weather_embed import WeatherEmbed
 from embeds.line_embed import LineEmbed
 
 ALL_EMBEDS: tuple[type[Embed], ...] = (
-    WeatherEmbed,
+    # WeatherEmbed,
     AlertEmbed,
-    LineEmbed
+    # LineEmbed
 )

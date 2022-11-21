@@ -22,7 +22,7 @@ class StoptimeShortnameRenderer(elements.StoptimeBaseRenderer):
 
         return pygame.Rect(stoptime_rect.topleft, (w, stoptime_rect.height))
 
-    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
         surf = pygame.Surface(size, pygame.SRCALPHA)
 
         font_height: int = self.get_font_height(size[1])

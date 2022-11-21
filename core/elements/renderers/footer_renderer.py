@@ -13,7 +13,7 @@ class FooterRenderer(elements.ElementRenderer):
     def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
         return params.footer_rect
 
-    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
         nyssefi_font_height: int = size[1]
         nyssefi_text = self.nyssefi_font.get_size(nyssefi_font_height).render("nysse.fi", True, Colors.WHITE)
 

@@ -5,12 +5,15 @@ import pygame
 from core import debug, elements, renderer, font_helper
 from core.colors import Colors
 
+# TODO: Create overlay renderers which update everything underneath on each render.
 class DebugRenderer(elements.ElementRenderer):
     def __init__(self) -> None:
         self.last_debug: bool = False
         self.debug: bool = False
         self.render_empty: bool = False
         self.render_fields: list[str] = []
+
+        self._last_rect: pygame.Rect | None = None
 
     def setup(self) -> None:
         self.font: pygame.font.Font = pygame.font.Font("resources/fonts/Lato-Regular.ttf", 14)
@@ -56,13 +59,26 @@ class DebugRenderer(elements.ElementRenderer):
         width: int = round(params.display_size[0] / 3)
         height: int = len(self.render_fields) * self.font.get_linesize()
 
-        return pygame.Rect(0, 0, width, height)
+        new_rect: pygame.Rect = pygame.Rect(0, 0, width, height)
 
-    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+        output: pygame.Rect
+        if self._last_rect is not None and (self._last_rect.width > new_rect.width or self._last_rect.height > new_rect.height):
+            output = self._last_rect
+            renderer.force_render()
+        else:
+            output = new_rect
+        self._last_rect = new_rect
+        self.content_rect: pygame.Rect = new_rect
+
+        return output
+
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
         if self.render_empty:
             return None
 
-        surf: pygame.Surface = pygame.Surface(size)
+        surf: pygame.Surface = pygame.Surface(size, pygame.SRCALPHA)
+        surf.fill((0, 0, 0), (0, 0, self.content_rect.width, self.content_rect.height))
+
         for i, field in enumerate(self.render_fields):
             rendered_field: pygame.Surface = self.font.render(field, True, Colors.WHITE)
             surf.blit(rendered_field, (0, i * self.font.get_linesize()))

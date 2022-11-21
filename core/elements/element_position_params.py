@@ -1,10 +1,11 @@
 import pygame
-from core import renderer, config
+from core import config
 
 class ElementPositionParams:
     @property
     def display_size(self) -> tuple[int, int]:
-        # return renderer.get_size()
+        # Should be the same as renderer.get_size()
+        # which cannot be called due to it creating a circular import.
         return pygame.display.get_window_size()
 
     @property
