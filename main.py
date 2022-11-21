@@ -12,11 +12,6 @@ from digitransit.routing import Stoptime
 def main():
     init()
 
-    embed_surf: pygame.Surface | None = None
-    debugFont: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "debug")
-
-    temp_element_position_params: elements.ElementPositionParams = elements.ElementPositionParams()
-
     running: bool = True
     while running:
         context: elements.UpdateContext = elements.UpdateContext(datetime.datetime.now(), render_info.stopinfo)

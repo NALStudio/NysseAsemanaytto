@@ -22,6 +22,6 @@ class ElementRenderer(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def render(self, size: tuple[int, int]) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], params: elements.ElementPositionParams) -> pygame.Surface | None:
         """Render this element onto a surface with the specified size. Return `None` to clear this area of the screen. Return `...` to leave this area of the screen as is and ignore this element."""
         raise NotImplementedError()
