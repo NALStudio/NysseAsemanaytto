@@ -23,14 +23,14 @@ class EmbedRenderer(elements.ElementRenderer):
 
         return changes
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        embed_rect: pygame.Rect = params.embed_rect
+    def get_rect(self) -> pygame.Rect:
+        embed_rect: pygame.Rect = elements.position_params.embed_rect
         if embed_rect.width < 0 or embed_rect.height < 0:
             raise RuntimeError("Embed rect too small!")
         return embed_rect
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         if self.embed_data is None:
             return None
 
-        return self.embed_data.embed.render(size, params, flags)
+        return self.embed_data.embed.render(size, flags)

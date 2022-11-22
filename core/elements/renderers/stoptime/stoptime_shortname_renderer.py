@@ -16,13 +16,13 @@ class StoptimeShortnameRenderer(elements.StoptimeBaseRenderer):
     def get_error_value(self) -> str:
         return "<e>"
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        stoptime_rect: pygame.Rect = params.get_stoptime_rect(self.stoptime_index)
-        w: int = params.stoptime_shortname_headsign_split_x - stoptime_rect.left
+    def get_rect(self) -> pygame.Rect:
+        stoptime_rect: pygame.Rect = elements.position_params.get_stoptime_rect(self.stoptime_index)
+        w: int = elements.position_params.stoptime_shortname_headsign_split_x - stoptime_rect.left
 
         return pygame.Rect(stoptime_rect.topleft, (w, stoptime_rect.height))
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         surf = pygame.Surface(size, pygame.SRCALPHA)
 
         font_height: int = self.get_font_height(size[1])

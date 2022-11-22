@@ -1,4 +1,4 @@
-from typing import NamedTuple as _NamedTuple
+import typing as _typing
 import pygame as _pygame
 import random as _random
 import datetime as _datetime
@@ -9,11 +9,12 @@ from core import logging as _logging
 from nysse import background_generator as _nysse_background
 from nalpy import math as _math
 
-class _DeferredRender(_NamedTuple):
+class _DeferredRender(_typing.NamedTuple):
     render_time: _datetime.datetime
     surface: _pygame.Surface
     rect: _pygame.Rect
     flags: _elements.RenderFlags
+    element_ref: _elements.ElementRenderer
     debug_color: tuple[int, int, int]
 
 _display_surf: _pygame.Surface
@@ -33,13 +34,11 @@ def reset_debug_colors() -> None:
 
 _immediate_renders: list[_elements.ElementRenderer] = []
 _deferred_renders: list[_DeferredRender] = []
+_rerender_renders: list[_elements.ElementRenderer] = []
 
 _initialized: bool = False
-_force_render: bool = False
 
 _background: _pygame.Surface | None = None
-
-_element_position_params: _elements.ElementPositionParams = _elements.ElementPositionParams()
 
 def init(size: tuple[int, int], flags: int):
     global _display_surf, _clock, _initialized
@@ -53,7 +52,7 @@ def init(size: tuple[int, int], flags: int):
     for r in _renderers:
         r.setup()
 
-    force_render()
+    force_rerender()
 
     _initialized = True
 
@@ -107,25 +106,36 @@ def add_renderer(renderer: _elements.ElementRenderer) -> None:
 
     _renderers += (renderer,)
 
-def force_render() -> None:
-    global _force_render
-    _force_render = True
+def force_rerender(*, rect: _pygame.Rect | None = None, size: tuple[int, int] | None = None, ignore_elements: _typing.Sequence[_elements.ElementRenderer] | None = None) -> None:
+    global _rerender_renders, _background
+
+    def should_be_forced(renderer: _elements.ElementRenderer) -> bool:
+        if ignore_elements is not None and renderer in ignore_elements:
+            return False
+
+        if rect is None or rect.colliderect(renderer.get_rect()):
+            return True
+
+        return False
+
+    to_rerender: tuple[_elements.ElementRenderer, ...] = tuple(renderer for renderer in _renderers if should_be_forced(renderer))
+    _rerender_renders.extend(to_rerender)
+
+    msg_rnd: list[str] = [f"{len(to_rerender)} display elements."]
+    if _background is not None and _background.get_size() != size: # None check provided with !=
+        _background = None
+        msg_rnd.insert(0, "background")
+    _logging.debug(f"Forced rendering of {' and '.join(msg_rnd)}.", stack_info=False)
 
 def update(context: _elements.UpdateContext):
-    global _force_render, _background
-    forced: bool = _force_render
+    global _background
 
     for renderer in _renderers:
-        if renderer.update(context) or forced:
+        if renderer.update(context):
             _immediate_renders.append(renderer)
 
-    if forced:
-        _logging.debug("Forced rendering of background and all display elements.", stack_info=False)
-        _background = None
-        _force_render = False
-
 def render(now: _datetime.datetime, framerate: int = -1):
-    global _background
+    global _background, _immediate_renders, _rerender_renders
     if _background is None:
         _logging.debug("Rendering background...", stack_info=False)
         _background = _nysse_background.generate_background(get_size())
@@ -133,32 +143,52 @@ def render(now: _datetime.datetime, framerate: int = -1):
         _pygame.display.flip()
 
     render_rects: list[_pygame.Rect] = []
+    render_rects.extend(_render_immediate(now, _background))
 
+    rerender_iterations: int = 0
+    while len(_rerender_renders) > 0:
+        if rerender_iterations >= 10:
+            raise RuntimeError("maximum rerender recursion depth reached.")
+
+        _immediate_renders.extend(rerender for rerender in _rerender_renders)
+        _rerender_renders.clear()
+        render_rects.extend(_render_immediate(now, _background))
+
+        rerender_iterations += 1
+
+    render_rects.extend(_render_deferred(now, _background))
+
+    _debug.set_custom_field("render_count", "Render Count", len(render_rects))
+    _pygame.display.update(render_rects)
+    _clock.tick(framerate) # clock.tick after update because no time sensitive functionality after display update
+
+def _render_immediate(now: _datetime.datetime, background: _pygame.Surface) -> _typing.Iterator[_pygame.Rect]:
+    global _deferred_renders, _immediate_renders
     for renderer in _immediate_renders:
         flags: _elements.RenderFlags = _elements.RenderFlags()
-        rect: _pygame.Rect = renderer.get_rect(_element_position_params)
-        rnd: _pygame.Surface | None = renderer.render(rect.size, _element_position_params, flags)
+        rect: _pygame.Rect = renderer.get_rect()
+        rnd: _pygame.Surface | None = renderer.render(rect.size, flags)
         debug_col: tuple[int, int, int] = _get_debug_color(renderer)
-        render_rects.append(rect)
-        if _render(rnd, rect, flags, _background, True, debug_col) and rnd is not None:
-            scheduled: _DeferredRender = _DeferredRender(now + _datetime.timedelta(seconds=0.2), rnd, rect, flags, debug_col)
+        if _render(rnd, rect, flags, renderer, background, True, debug_col) and rnd is not None:
+            scheduled: _DeferredRender = _DeferredRender(now + _datetime.timedelta(seconds=0.2), rnd, rect, flags, renderer, debug_col)
             _deferred_renders.append(scheduled)
+        yield rect
 
     _immediate_renders.clear()
 
+def _render_deferred(now: _datetime.datetime, background: _pygame.Surface) -> _typing.Iterator[_pygame.Rect]:
+    global _deferred_renders
     for deferred in _deferred_renders.copy():
         if deferred.render_time > now: # If still in future
             continue
 
         _deferred_renders.remove(deferred)
-        render_rects.append(deferred.rect)
-        append_deferred: bool = _render(deferred.surface, deferred.rect, deferred.flags, _background, False, deferred.debug_color)
+        append_deferred: bool = _render(deferred.surface, deferred.rect, deferred.flags, deferred.element_ref, background, False, deferred.debug_color)
         assert append_deferred == False
 
-    _pygame.display.update(render_rects)
-    _clock.tick(framerate) # clock.tick after update because no time sensitive functionality after display update
+        yield deferred.rect
 
-def _render(render: _pygame.Surface | None, rect: _pygame.Rect, flags: _elements.RenderFlags, background: _pygame.Surface, allow_debug: bool, debug_color: tuple[int, int, int]) -> bool:
+def _clear_background(rect: _pygame.Rect, background: _pygame.Surface, debug_color: tuple[int, int, int]):
     bkgrnd: _pygame.Surface = background.subsurface(rect.clip((0, 0, *background.get_size())))
     if _debug.rect_enabled:
         debug_bkgrnd = _pygame.Surface(rect.size)
@@ -166,6 +196,12 @@ def _render(render: _pygame.Surface | None, rect: _pygame.Rect, flags: _elements
         bkgrnd = debug_bkgrnd
 
     _display_surf.blit(bkgrnd, rect.topleft)
+
+def _render(render: _pygame.Surface | None, rect: _pygame.Rect, flags: _elements.RenderFlags, element_ref: _elements.ElementRenderer, background: _pygame.Surface, allow_debug: bool, debug_color: tuple[int, int, int]) -> bool:
+    if flags.clear_background:
+        _clear_background(rect, background, debug_color)
+    if flags.rerender_colliding_elements:
+        force_rerender(rect=rect, size=get_size(), ignore_elements=(element_ref,))
 
     if _debug.render_enabled == True and allow_debug:
         render_update_debug_col: tuple[int, int, int] = (255, 0, 0) if flags.clear_background else (0, 0, 255)

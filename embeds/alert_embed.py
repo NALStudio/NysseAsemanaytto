@@ -92,10 +92,10 @@ class AlertEmbed(embeds.Embed):
     def on_disable(self):
         self._alert_index += 1
         if self._alerts is not None:
-            self._alert_index %= (2 * len(self._alerts)) # Calculated so that alert_index doesn't cause a memory leak
+            self._alert_index %= len(self._alerts) # Calculated so that alert_index doesn't cause a memory leak
 
     def update(self, context: elements.UpdateContext, progress: float) -> bool:
-        debug.add_custom_field("Alert Index", self._alert_index)
+        debug.set_custom_field("alert_index", "Alert Index", self._alert_index)
 
         changes: bool = False
 
@@ -116,7 +116,7 @@ class AlertEmbed(embeds.Embed):
 
         return changes
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         flags.clear_background = False
         if not self._first_frame_rendered:
             flags.clear_background = True
@@ -128,7 +128,7 @@ class AlertEmbed(embeds.Embed):
         BACKGROUND_COLOR = colors.Colors.WHITE
         BORDER_COLOR = colors.NysseColors.RATIKANPUNAINEN
 
-        content_spacing: int = params.content_spacing
+        content_spacing: int = elements.position_params.content_spacing
 
         border_radius = round(size[1] / 15)
         border_width = round(content_spacing / 2)

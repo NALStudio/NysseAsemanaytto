@@ -20,10 +20,10 @@ class StopInfoRenderer(elements.ElementRenderer):
 
         return changes
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        return params.stop_info_rect
+    def get_rect(self) -> pygame.Rect:
+        return elements.position_params.stop_info_rect
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         font_height: int = size[1] - round(size[1] / 3)
 
         icon_size: int = round(size[1] / 1.75)

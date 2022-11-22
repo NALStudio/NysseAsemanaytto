@@ -1,5 +1,9 @@
+from typing import Final as _Final
+from core.elements.element_position_params import ElementPositionParams as _epp
+position_params: _Final[_epp] = _epp()
+
 from core.elements.update_context import UpdateContext as UpdateContext
-from core.elements.element_position_params import ElementPositionParams as ElementPositionParams
+
 from core.elements.render_flags import RenderFlags as RenderFlags
 
 

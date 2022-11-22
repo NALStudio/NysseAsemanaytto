@@ -10,10 +10,10 @@ class FooterRenderer(elements.ElementRenderer):
         self.unscaled_footer_pictograms: pygame.Surface = pygame.image.load("resources/textures/elements/footer/footer_pictograms.png").convert_alpha()
         self.nyssefi_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lota-Grotesque-Bold.otf")
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        return params.footer_rect
+    def get_rect(self) -> pygame.Rect:
+        return elements.position_params.footer_rect
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         nyssefi_font_height: int = size[1]
         nyssefi_text = self.nyssefi_font.get_size(nyssefi_font_height).render("nysse.fi", True, Colors.WHITE)
 

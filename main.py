@@ -27,6 +27,8 @@ def main():
                         debug.profiler.disable()
                     elif debug.enabled: # Checking this so someone doesn't accidentally turn it on while playing
                         debug.profiler.enable()
+                elif event.key == pygame.K_F5:
+                    renderer.force_rerender()
                 elif event.key == pygame.K_F6:
                     if debug.render_enabled:
                         debug.render_enabled = False
@@ -35,13 +37,13 @@ def main():
                 elif event.key == pygame.K_F7:
                     if debug.rect_enabled:
                         debug.rect_enabled = False
-                        renderer.force_render()
+                        renderer.force_rerender(size=renderer.get_size())
                     elif debug.enabled:
                         debug.rect_enabled = True
                         renderer.reset_debug_colors()
-                        renderer.force_render()
+                        renderer.force_rerender(size=renderer.get_size())
             elif event.type == pygame.WINDOWSIZECHANGED:
-                renderer.force_render()
+                renderer.force_rerender(size=(event.x, event.y))
         #endregion
 
         #region Header

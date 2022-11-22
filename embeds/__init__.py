@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-import datetime
+from typing import NamedTuple
 import pygame
 from core import elements
 
@@ -22,7 +22,7 @@ class Embed(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         """Render this embed onto a surface with the specified size. Return `None` to clear this area of the screen. Return `...` to leave this area of the screen as is and ignore this embed."""
         raise NotImplementedError()
 

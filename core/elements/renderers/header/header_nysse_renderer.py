@@ -8,8 +8,8 @@ class HeaderNysseRenderer(elements.ElementRenderer):
     def setup(self) -> None:
         self.nysse_logo_unscaled: pygame.Surface = pygame.image.load("resources/textures/logos/nysse/logo.png").convert_alpha()
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        header_rect: pygame.Rect = params.header_rect
+    def get_rect(self) -> pygame.Rect:
+        header_rect: pygame.Rect = elements.position_params.header_rect
 
         w: int = header_rect.height * 4 # *4 should be enough to contain the logo
         h: int = round(header_rect.height * 0.7)
@@ -19,7 +19,7 @@ class HeaderNysseRenderer(elements.ElementRenderer):
 
         return pygame.Rect(x, y, w, h)
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         unscaled_logo = self.nysse_logo_unscaled
 
         target_height: int = size[1]

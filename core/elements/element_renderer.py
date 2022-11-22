@@ -17,11 +17,11 @@ class ElementRenderer(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
+    def get_rect(self) -> pygame.Rect:
         """Compute the global rect of this element."""
         raise NotImplementedError()
 
     @abstractmethod
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         """Render this element onto a surface with the specified size. Return `None` to clear this area of the screen. Return `...` to leave this area of the screen as is and ignore this element."""
         raise NotImplementedError()

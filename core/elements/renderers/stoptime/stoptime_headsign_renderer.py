@@ -19,20 +19,20 @@ class StoptimeHeadsignRenderer(elements.StoptimeBaseRenderer):
     def get_error_value(self) -> str:
         return "<error>"
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        stoptime_rect: pygame.Rect = params.get_stoptime_rect(self.stoptime_index)
+    def get_rect(self) -> pygame.Rect:
+        stoptime_rect: pygame.Rect = elements.position_params.get_stoptime_rect(self.stoptime_index)
         height: int = stoptime_rect.height
 
-        left: int = params.stoptime_shortname_headsign_split_x
+        left: int = elements.position_params.stoptime_shortname_headsign_split_x
 
         right_calc_font = self.time_renderer.font.get_size(self.get_font_height(height))
-        right: int = params.get_stoptime_headsign_time_split_x(right_calc_font)
+        right: int = elements.position_params.get_stoptime_headsign_time_split_x(right_calc_font)
 
         width: int = right - left
 
         return pygame.Rect(left, stoptime_rect.top, width, height)
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         font_height: int = self.get_font_height(size[1])
         line_headsign_render = self.font.get_size(round(font_height * 0.9)).render(self.value, True, colors.Colors.WHITE)
 

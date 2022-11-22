@@ -25,8 +25,8 @@ class HeaderTimeRenderer(elements.ElementRenderer):
 
         return changes
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        header_rect: pygame.Rect = params.header_rect
+    def get_rect(self) -> pygame.Rect:
+        header_rect: pygame.Rect = elements.position_params.header_rect
 
         w: int = header_rect.height * 3 # *3 should be enough to contain the time render
         h: int = header_rect.height
@@ -36,7 +36,7 @@ class HeaderTimeRenderer(elements.ElementRenderer):
 
         return pygame.Rect(x, y, w, h)
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         time_str: str = self.time.strftime(elements.TIMEFORMAT)
         time: pygame.Surface = self.font.get_size(size[1]).render(time_str, True, Colors.WHITE)
 

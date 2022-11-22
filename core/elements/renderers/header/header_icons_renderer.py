@@ -20,11 +20,11 @@ class HeaderIconsRenderer(elements.ElementRenderer):
 
         return changes
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        header_rect: pygame.Rect = params.header_rect
+    def get_rect(self) -> pygame.Rect:
+        header_rect: pygame.Rect = elements.position_params.header_rect
         return pygame.Rect(header_rect.left, header_rect.top, header_rect.height, header_rect.height) # width is height, square
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         assert self.vehicle_mode is not None, "Update should have assigned vehicle_mode already."
         transport_icon = nysse.styles.load_pictogram_by_mode(self.vehicle_mode)
         if transport_icon is not None:

@@ -33,18 +33,18 @@ class StoptimeTimeRenderer(elements.StoptimeBaseRenderer):
     def get_error_value(self) -> str:
         return "<error>"
 
-    def get_rect(self, params: elements.ElementPositionParams) -> pygame.Rect:
-        stoptime_rect: pygame.Rect = params.get_stoptime_rect(self.stoptime_index)
+    def get_rect(self) -> pygame.Rect:
+        stoptime_rect: pygame.Rect = elements.position_params.get_stoptime_rect(self.stoptime_index)
         height: int = stoptime_rect.height
 
         x_calc_font = self.font.get_size(self.get_font_height(height))
-        x: int = params.get_stoptime_headsign_time_split_x(x_calc_font)
+        x: int = elements.position_params.get_stoptime_headsign_time_split_x(x_calc_font)
 
         w: int = stoptime_rect.right - x
 
         return pygame.Rect(x, stoptime_rect.top, w, height)
 
-    def render(self, size: tuple[int, int], params: elements.ElementPositionParams, flags: elements.RenderFlags) -> pygame.Surface | None:
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         cancelled: bool = False
         time_str: str = self.value
         if time_str.startswith(CANCELLED_PREFIX):

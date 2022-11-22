@@ -1,7 +1,17 @@
+from typing import final
 import pygame
 from core import config
 
+_instanciated: bool = False
+
+@final
 class ElementPositionParams:
+    def __init__(self) -> None:
+        global _instanciated
+        if _instanciated:
+            raise RuntimeError(f"{type(self).__name__} is a single-instance class reserved for elements module.")
+        _instanciated = True
+
     @property
     def display_size(self) -> tuple[int, int]:
         # Should be the same as renderer.get_size()
