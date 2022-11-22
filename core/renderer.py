@@ -70,7 +70,7 @@ def get_frametime(round_to_digits: int | None = None) -> float:
     Includes any time used by `clock.tick()` on delaying to target framerate.
     """
     frametime = _clock.get_time()
-    if round_to_digits is not None:
+    if round_to_digits is not None and not _math.isinf(frametime):
         frametime = _math.round_away_from_zero_to_digits(frametime, round_to_digits)
     return frametime
 
@@ -80,7 +80,7 @@ def get_raw_frametime(round_to_digits: int | None = None) -> float:
     Does not include any time used by `clock.tick()`.
     """
     frametime = _clock.get_rawtime()
-    if round_to_digits is not None:
+    if round_to_digits is not None and not _math.isinf(frametime):
         frametime = _math.round_away_from_zero_to_digits(frametime, round_to_digits)
     return frametime
 

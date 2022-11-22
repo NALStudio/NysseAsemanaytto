@@ -124,7 +124,7 @@ def main():
         #endregion
 
         renderer.update(context)
-        renderer.render(context.time)
+        renderer.render(context.time, config.current.framerate)
 
     quit()
 

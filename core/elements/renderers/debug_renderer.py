@@ -2,7 +2,7 @@ import os
 import threading
 import psutil
 import pygame
-from core import debug, elements, renderer, font_helper
+from core import debug, elements, renderer
 from core.colors import Colors
 
 class DebugRenderer(elements.ElementRenderer):
