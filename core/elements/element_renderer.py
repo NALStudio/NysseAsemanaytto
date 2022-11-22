@@ -23,5 +23,10 @@ class ElementRenderer(ABC):
 
     @abstractmethod
     def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
-        """Render this element onto a surface with the specified size. Return `None` to clear this area of the screen. Return `...` to leave this area of the screen as is and ignore this element."""
+        """
+        Render this element onto a surface with the specified size. Return `None` to clear this area of the screen.
+        Return `None` to clear this area of the screen and adjust the flags-object to modify rendering behaviour.
+
+        Should not modify the state of this element.
+        """
         raise NotImplementedError()

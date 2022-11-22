@@ -1,6 +1,5 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import NamedTuple
 import pygame
 from core import elements
 
@@ -23,7 +22,12 @@ class Embed(ABC):
 
     @abstractmethod
     def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
-        """Render this embed onto a surface with the specified size. Return `None` to clear this area of the screen. Return `...` to leave this area of the screen as is and ignore this embed."""
+        """
+        Render this embed onto a surface with the specified size.
+        Return `None` to clear this area of the screen and adjust the flags-object to modify rendering behaviour.
+
+        Should not modify the state of this embed.
+        """
         raise NotImplementedError()
 
     @staticmethod
@@ -44,5 +48,5 @@ from embeds.line_embed import LineEmbed
 ALL_EMBEDS: tuple[type[Embed], ...] = (
     # WeatherEmbed,
     AlertEmbed,
-    # LineEmbed
+    LineEmbed
 )
