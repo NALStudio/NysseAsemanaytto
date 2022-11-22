@@ -12,5 +12,4 @@ def get_fields(*custom_fields: tuple[str, object]) -> list[tuple[str, object]]:
         *sorted(_custom.values(), key=lambda fld: fld[0]),
         ("Profiler", "enabled" if debug.profiler.is_enabled() else "disabled")
     ]
-    _custom.clear()
     return fields
