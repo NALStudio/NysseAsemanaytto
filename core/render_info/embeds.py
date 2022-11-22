@@ -49,9 +49,15 @@ def _cycle_embed() -> None:
         return
 
     new_embed: embeds.Embed | None = None
+    new_embed_find_iterations: int = 0
     while new_embed is None or new_embed.requested_duration() <= 0.0:
-        embed_index = (embed_index + 1) % len(config.current.enabled_embeds)
+        embed_count: int = len(config.current.enabled_embeds)
+        if new_embed_find_iterations > embed_count:
+            raise RuntimeError("maximum embed find recursion depth reached.")
+
+        embed_index = (embed_index + 1) % embed_count
         new_embed = enabled_embeds[embed_index]
+        new_embed_find_iterations += 1
 
     with render_info.current_embed_data_lock:
         # disable old

@@ -60,7 +60,7 @@ def init(size: tuple[int, int], flags: int):
 def get_fps(round_to_digits: int | None = None) -> float:
     """Compute the clock framerate (in frames per second) by averaging the last ten calls to `clock.tick()`."""
     fps = _clock.get_fps()
-    if round_to_digits is not None:
+    if round_to_digits is not None and not _math.isinf(fps):
         fps = _math.round_away_from_zero_to_digits(fps, round_to_digits)
     return fps
 
