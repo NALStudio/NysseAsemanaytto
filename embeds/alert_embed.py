@@ -2,6 +2,7 @@ from __future__ import annotations
 import datetime
 import threading
 import time
+from types import EllipsisType
 
 import embeds
 import digitransit.routing
@@ -94,7 +95,7 @@ class AlertEmbed(embeds.Embed):
         if self._alerts is not None:
             self._alert_index %= len(self._alerts) # Calculated so that alert_index doesn't cause a memory leak
 
-    def update(self, context: elements.UpdateContext, progress: float) -> bool:
+    def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
         debug.set_custom_field("alert_index", "Alert Index", self._alert_index)
 
         changes: bool = False

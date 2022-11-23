@@ -1,7 +1,13 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from types import EllipsisType
+from typing import NamedTuple
 import pygame
 from core import elements
+
+class EmbedContext(NamedTuple):
+    first_frame: bool
+    update: elements.UpdateContext
 
 class Embed(ABC):
     def __init__(self, *args: str):
@@ -16,8 +22,12 @@ class Embed(ABC):
         pass
 
     @abstractmethod
-    def update(self, context: elements.UpdateContext, progress: float) -> bool:
-        """Called repeatedly to refresh this embed's data. Return `True` to render this embed with the updated data."""
+    def update(self, context: EmbedContext, progress: float) -> bool | EllipsisType:
+        """
+        Called repeatedly to refresh this embed's data.
+        Return `True` to render this embed with the updated data.
+        Return `...` to render using the previous frame of this embed if possible.
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -46,7 +56,7 @@ from embeds.weather_embed import WeatherEmbed
 from embeds.line_embed import LineEmbed
 
 ALL_EMBEDS: tuple[type[Embed], ...] = (
-    # WeatherEmbed,
+    WeatherEmbed,
     AlertEmbed,
     LineEmbed
 )

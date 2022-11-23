@@ -1,14 +1,28 @@
 from __future__ import annotations
+from types import EllipsisType
 
 import embeds
 from nalpy import math
-from core import weather_handler, colors, font_helper, logging, datetime_utils
+from core import elements, weather_handler, colors, font_helper, logging, datetime_utils
 import pygame
 import time
-from typing import Iterable, Sequence
+from typing import Iterable, NamedTuple, Sequence
 import datetime
 
 BACKGROUND_COLOR = colors.Colors.WHITE
+
+class WeatherDatapoint(NamedTuple):
+    time_local: datetime.datetime
+    temperature: float
+    symbol_id: int
+
+    @staticmethod
+    def from_fmi(weather: weather_handler.Weather) -> WeatherDatapoint:
+        return WeatherDatapoint(
+            time_local=weather.time_local,
+            temperature=weather.temperature,
+            symbol_id=weather.symbol_id
+        )
 
 def _round_datetime_to_nearest_third_hour(dt: datetime.datetime):
     total_hours: float = dt.hour + dt.minute / 60.0
@@ -27,22 +41,24 @@ class WeatherEmbed(embeds.Embed):
         self.refresh_rate: float = 3600.0 # seconds
 
         self.last_update: float | None = None
-        self.weather: list[weather_handler.Weather] | None = None
-        self.cached_weather_surface: pygame.Surface | None = None
-        self.big_time_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "weather embed time rendering")
-        self.small_time_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "weather embed time rendering")
+
+        self.weather: list[WeatherDatapoint] | None = None # Important init value
+        self.rendered_weather: list[WeatherDatapoint] | None = None # Important init value
+
+        self.current_weather_time_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "weather embed time rendering")
+        self.stat_weather_time_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "weather embed time rendering")
         self.hour_count: int = 11 # (datapoint_count * 3) - 1
 
     def _set_weather(self, weather: Iterable[weather_handler.Weather]):
-        self.weather = list(weather)
-        self.cached_weather_surface = None # Force re-rendering of the weather data.
+        self.weather = [WeatherDatapoint.from_fmi(w) for w in weather]
 
     def on_enable(self):
-        now_update = time.time()
+        now = datetime.datetime.now()
+        now_update = now.timestamp()
         if self.last_update is None or (now_update - self.last_update) > self.refresh_rate:
             logging.info(f"Loading new weather data... ({self.fmi_place})", stack_info=False)
 
-            starttime_local = _round_datetime_to_nearest_third_hour(datetime.datetime.now())
+            starttime_local = _round_datetime_to_nearest_third_hour(now)
             starttime_utc = datetime_utils.local2utc(starttime_local)
             duration = datetime.timedelta(hours=self.hour_count)
             params = weather_handler.WeatherFetchParams(starttime_utc, duration, 3 * 60)
@@ -55,64 +71,63 @@ class WeatherEmbed(embeds.Embed):
     def on_disable(self):
         pass
 
-    # This is re-rendered by the render() or _set_weather() methods.
-    def render_cached_surface(self, size: tuple[int, int]) -> None:
-        logging.debug("Rendering new weather embed...", stack_info=False)
+    def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
+        if self.weather != self.rendered_weather: # Handles None check, because rendered_weather init is None
+            self.rendered_weather = self.weather
+            return True
 
-        weather = self.weather
-        if weather is None:
+        if context.first_frame:
+            return ...
+
+        return False
+
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
+        flags.clear_background = False
+
+        if self.weather is None:
             logging.debug("Weather data is not loaded yet! Cancelling weather embed rendering...", stack_info=False)
-            return
+            return None
 
         HORIZONTAL_MARGIN = round(size[0] / 30)
         VERTICAL_MARGIN = HORIZONTAL_MARGIN
-        surface = pygame.Surface(size)
 
-        surface.fill(BACKGROUND_COLOR)
+        surf = pygame.Surface(size)
+        surf.fill(BACKGROUND_COLOR)
 
         COUNT = 4
-        assert len(weather) == COUNT
+        assert len(self.weather) == COUNT
 
         OTHER_EXTRA_VERTICAL_MARGIN: int = VERTICAL_MARGIN * 2
         CURRENT_OTHER_PADDING: int = HORIZONTAL_MARGIN * 2
 
         current_other_padding_half = CURRENT_OTHER_PADDING / 2
-        total_width = surface.get_width() - (2 * HORIZONTAL_MARGIN)
-        total_height = surface.get_height() - (2 * VERTICAL_MARGIN)
+        total_width = surf.get_width() - (2 * HORIZONTAL_MARGIN)
+        total_height = surf.get_height() - (2 * VERTICAL_MARGIN)
 
         other_width = ((total_width * math.GOLDEN_RATIO) / (math.GOLDEN_RATIO + 1)) - current_other_padding_half
         other_height = total_height - round(2.45 * OTHER_EXTRA_VERTICAL_MARGIN)
         if other_width < 0 or other_height < 0:
-            return
+            return None
         other_surf = pygame.Surface((other_width, other_height))
 
         current_width = total_width - other_width - current_other_padding_half
         if current_width < 0:
-            return
+            return None
         current_surf = pygame.Surface((round(current_width), total_height))
 
-        self.render_current_weather(current_surf, weather[0])
-        self.render_other_weathers(other_surf, weather[1:])
+        self.render_current_weather(current_surf, self.weather[0])
+        self.render_other_weathers(other_surf, self.weather[1:])
 
-        surface.blit(current_surf, (HORIZONTAL_MARGIN, VERTICAL_MARGIN))
-        surface.blit(other_surf, (current_width + CURRENT_OTHER_PADDING, VERTICAL_MARGIN + OTHER_EXTRA_VERTICAL_MARGIN))
+        surf.blit(current_surf, (HORIZONTAL_MARGIN, VERTICAL_MARGIN))
+        surf.blit(other_surf, (current_width + CURRENT_OTHER_PADDING, VERTICAL_MARGIN + OTHER_EXTRA_VERTICAL_MARGIN))
 
-        self.cached_weather_surface = surface
+        return surf
 
-    def render(self, surface: pygame.Surface, content_spacing: int, approx_datetime: datetime.datetime, progress: float):
-        target_size: tuple[int, int] = surface.get_size()
-
-        if self.cached_weather_surface is None or self.cached_weather_surface.get_size() != target_size:
-            self.render_cached_surface(target_size)
-
-        if self.cached_weather_surface is not None:
-            surface.blit(self.cached_weather_surface, (0, 0))
-
-    def render_weather_stat(self, surface: pygame.Surface, weather: weather_handler.Weather):
+    def render_weather_stat(self, surface: pygame.Surface, weather: WeatherDatapoint):
         surface_size: tuple[int, int] = surface.get_size()
         surface.fill(BACKGROUND_COLOR)
 
-        font = self.big_time_font.get_size(round(surface_size[1] / 8))
+        font = self.stat_weather_time_font.get_size(round(surface_size[1] / 8))
 
         symbol = weather_handler.get_weather_symbol(weather.symbol_id)
         symbol_width: int = symbol.get_width()
@@ -129,7 +144,7 @@ class WeatherEmbed(embeds.Embed):
         surface.blit(time, (round(centerx - time.get_width() / 2), round(math.lerp(top, temperature_y, 0.5) - time.get_height())))
         surface.blit(temperature, (round(centerx - temperature.get_width() / 2), temperature_y))
 
-    def render_other_weathers(self, surface: pygame.Surface, weathers: Sequence[weather_handler.Weather]):
+    def render_other_weathers(self, surface: pygame.Surface, weathers: Sequence[WeatherDatapoint]):
         surface.fill(BACKGROUND_COLOR)
         PADDING: float = surface.get_width() / 15
 
@@ -140,11 +155,11 @@ class WeatherEmbed(embeds.Embed):
             self.render_weather_stat(common_surf, weather)
             surface.blit(common_surf, (round(i * (stat_width + PADDING)), 0))
 
-    def render_current_weather(self, surface: pygame.Surface, weather: weather_handler.Weather):
+    def render_current_weather(self, surface: pygame.Surface, weather: WeatherDatapoint):
         surface_size: tuple[int, int] = surface.get_size()
         surface.fill(BACKGROUND_COLOR)
 
-        font = self.big_time_font.get_size(round(surface_size[1] / 8))
+        font = self.current_weather_time_font.get_size(round(surface_size[1] / 8))
 
         symbol = weather_handler.get_weather_symbol(weather.symbol_id)
         symbol_width: int = symbol.get_width()

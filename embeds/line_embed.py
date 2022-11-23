@@ -1,6 +1,7 @@
 from __future__ import annotations
 import datetime
 import threading
+from types import EllipsisType
 from typing import NamedTuple, Sequence
 
 import embeds
@@ -72,11 +73,11 @@ class LineEmbed(embeds.Embed):
     def on_disable(self):
         self.trip = None
 
-    def update(self, context: elements.UpdateContext, progress: float) -> bool:
+    def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
         global last_render_cache_clear, line_render_cache
-        if last_render_cache_clear is None or (context.time - last_render_cache_clear).days > 1:
+        if last_render_cache_clear is None or (context.update.time - last_render_cache_clear).days > 1:
             logging.debug("Clearing line render cache... (Schedule)", stack_info=False)
-            last_render_cache_clear = context.time
+            last_render_cache_clear = context.update.time
             line_render_cache.clear()
 
         if not self.line_rendered:
