@@ -13,6 +13,7 @@ class DebugRenderer(elements.ElementRenderer):
         self.render_fields: list[str] = []
 
         self._max_height: int | None = None
+        self._max_width: int = 0
 
     def setup(self) -> None:
         self.font: pygame.font.Font = pygame.font.Font("resources/fonts/Lato-Regular.ttf", 14)
@@ -52,13 +53,20 @@ class DebugRenderer(elements.ElementRenderer):
         return [f"{name}: {value}" for name, value in fields]
 
     def get_rect(self) -> pygame.Rect:
-        width: int = round(elements.position_params.display_size[0] / 3)
-        height: int = len(self.render_fields) * self.font.get_linesize()
+        field_count: int = len(self.render_fields)
+        height: int = field_count * self.font.get_linesize()
+
+        width: int | None = None
+        if field_count > 0:
+            width = max(self.font.size(rf)[0] for rf in self.render_fields)
 
         if self._max_height is None or height > self._max_height: # Initial value 0. Height cannot physically be below that.
             self._max_height = height
 
-        return pygame.Rect(0, 0, width, self._max_height) # _max_height because debug will block elements behind it before render_empty == True
+        if width is not None and width > self._max_width:
+            self._max_width = width
+
+        return pygame.Rect(0, 0, self._max_width, self._max_height) # _max_height because debug will block elements behind it before render_empty == True
 
     def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         if self.render_empty:
