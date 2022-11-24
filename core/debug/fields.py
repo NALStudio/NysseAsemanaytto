@@ -1,16 +1,15 @@
-from core import clock, debug
+from core import debug, renderer
 
-_custom: list[tuple[str, object]] = []
-def add_custom_field(field_name: str, field_value: object):
-    _custom.append((field_name, field_value))
+_custom: dict[str, tuple[str, object]] = {}
+def set_custom_field(safename: str, field_name: str, field_value: object):
+    _custom[safename] = (field_name, field_value)
 
 def get_fields(*custom_fields: tuple[str, object]) -> list[tuple[str, object]]:
     global _custom
     fields = [
-        ("FPS", clock.get_fps(3)),
+        ("FPS", renderer.get_fps(3)),
         *custom_fields,
-        *_custom,
+        *sorted(_custom.values(), key=lambda fld: fld[0]),
         ("Profiler", "enabled" if debug.profiler.is_enabled() else "disabled")
     ]
-    _custom.clear()
     return fields

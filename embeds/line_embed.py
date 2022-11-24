@@ -1,6 +1,7 @@
 from __future__ import annotations
 import datetime
 import threading
+from types import EllipsisType
 from typing import NamedTuple, Sequence
 
 import embeds
@@ -11,7 +12,7 @@ import pyproj
 import nysse.styles
 import nysse.vehicle_monitoring
 
-from core import render_info, logging, config, font_helper, colors
+from core import debug, elements, render_info, logging, config, font_helper, colors
 from nalpy import math
 import digitransit.routing
 
@@ -35,11 +36,19 @@ class LineEmbed(embeds.Embed):
 
         self.display_vehicles: bool = False
         if len(args) > 0:
-            self.display_vehicles = bool(args[0])
+            self.display_vehicles: bool = bool(int(args[0]))
+            assert isinstance(self.display_vehicles, bool), "First argument must be an integer 0 or 1 defining if vehicles should be displayed on the line!"
 
         self.vehicle_positions: tuple[nysse.vehicle_monitoring.MonitoredVehicleJourney, ...] | None = None
-        self.rendered_vehicle_positions: pygame.Surface | None = None
         self.vehicle_request_thread: threading.Thread | None = None
+
+    def _get_positions(self, route_shortname: str):
+        client_id: str | None = config.current.nysse_api_client_id
+        client_secret: str | None = config.current.nysse_api_client_secret
+        if client_id is None or client_secret is None:
+            raise ValueError("Nysse API client ID and client secret must be defined for vehicle positions in line embed.")
+
+        self.vehicle_positions = nysse.vehicle_monitoring.get_monitored_vehicle_journeys(client_id, client_secret, route_shortname)
 
     def on_enable(self):
         assert render_info.stopinfo.stoptimes is not None
@@ -54,54 +63,61 @@ class LineEmbed(embeds.Embed):
             self.vehicle_request_thread.join()
 
         self.vehicle_positions = None
-        self.rendered_vehicle_positions = None
-        self.vehicle_request_thread = threading.Thread(target=self._get_positions, args=(route_shortname,), name=f"VehicleRequest_{route_shortname}")
-        self.vehicle_request_thread.start()
+        if self.display_vehicles:
+            self.vehicle_request_thread = threading.Thread(target=self._get_positions, args=(route_shortname,), name=f"VehicleRequest_{route_shortname}", daemon=False)
+            self.vehicle_request_thread.start()
 
-    def _get_positions(self, route_shortname: str):
-        client_id: str | None = config.current.nysse_api_client_id
-        client_secret: str | None = config.current.nysse_api_client_secret
-        if client_id is None or client_secret is None:
-            raise ValueError("Nysse API client ID and client secret must be defined for vehicle positions in line embed.")
-
-        self.vehicle_positions = nysse.vehicle_monitoring.get_monitored_vehicle_journeys(client_id, client_secret, route_shortname)
+        self.line_rendered: bool = False
+        self.vehicles_rendered: bool = False
 
     def on_disable(self):
         self.trip = None
 
-    def render(self, surface: pygame.Surface, content_spacing: int, approx_datetime: datetime.datetime, progress: float):
-        global last_render_cache_clear, line_render_cache_size
+    def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
+        global last_render_cache_clear, line_render_cache
+        if last_render_cache_clear is None or (context.update.time - last_render_cache_clear).days > 1:
+            logging.debug("Clearing line render cache... (Schedule)", stack_info=False)
+            last_render_cache_clear = context.update.time
+            line_render_cache.clear()
+
+        if not self.line_rendered:
+            self.line_rendered = True
+            return True
+        if not self.vehicles_rendered and self.vehicle_positions is not None:
+            self.vehicles_rendered = True
+            return True
+        return False
+
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
+        global last_render_cache_clear, line_render_cache_size, line_render_cache
 
         trip = self.trip
         assert trip is not None
 
-        surface_size: tuple[int, int] = surface.get_size()
-
-        if last_render_cache_clear is None or (approx_datetime - last_render_cache_clear).days > 1:
-            last_render_cache_clear = approx_datetime
-            line_render_cache.clear()
-
-        if line_render_cache_size is None or line_render_cache_size != surface_size:
-            line_render_cache_size = surface_size
+        if line_render_cache_size is None or line_render_cache_size != size:
+            logging.debug("Clearing line render cache... (Size)", stack_info=False)
+            line_render_cache_size = size
             line_render_cache.clear()
 
         patternCode = trip.patternCode
         if patternCode not in line_render_cache:
-            rendered: CachedLineRender | None = render_embed_for_pattern(patternCode, surface_size)
+            rendered: CachedLineRender | None = render_embed_for_pattern(patternCode, size)
             if rendered is None:
                 logging.error("Map line could not be rendered.")
                 return
             else:
                 line_render_cache[patternCode] = rendered
+                debug.set_custom_field("line_render_cache_length", "Line Render Cache Length", len(line_render_cache))
 
         cached_render: CachedLineRender = line_render_cache[patternCode]
-        surface.blit(cached_render.surface, (0, 0))
 
-        if self.rendered_vehicle_positions is None:
-            if self.vehicle_positions is not None:
-                self.rendered_vehicle_positions = render_vehicle_positions(cached_render, self.vehicle_positions)
-        else:
-            surface.blit(self.rendered_vehicle_positions, (0, 0))
+        flags.clear_background = False
+        surf: pygame.Surface = cached_render.surface.copy()
+
+        if self.vehicle_positions is not None:
+            surf.blit(render_vehicle_positions(cached_render, self.vehicle_positions), (0, 0))
+
+        return surf
 
     @staticmethod
     def name() -> str:
@@ -204,6 +220,12 @@ def _draw_joined_aalines(surface: pygame.Surface, color: tuple[int, int, int], p
         pygame.gfxdraw.aapolygon(surface, rounded, color)
         pygame.gfxdraw.filled_polygon(surface, rounded, color)
 
+    def _draw_line_end(point: math.Vector2):
+        r: int = round(thickness / 2)
+        x, y = point.to_int_tuple()
+        pygame.gfxdraw.aacircle(surface, x, y, r, color)
+        pygame.gfxdraw.filled_circle(surface, x, y, r, color)
+
     # draw lines
     for i in range(1, len(points) - 1):
         last_i: int = i - 1
@@ -239,11 +261,6 @@ def _draw_joined_aalines(surface: pygame.Surface, color: tuple[int, int, int], p
             pygame.gfxdraw.filled_polygon(surface, joint, color)
 
     # draw line ends
-    def _draw_line_end(point: math.Vector2):
-        r: int = round(thickness / 2)
-        x, y = point.to_int_tuple()
-        pygame.gfxdraw.aacircle(surface, x, y, r, color)
-        pygame.gfxdraw.filled_circle(surface, x, y, r, color)
     _draw_line_end(points[0])
     _draw_line_end(points[-1])
 

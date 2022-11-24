@@ -1,7 +1,13 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-import datetime
+from types import EllipsisType
+from typing import NamedTuple
 import pygame
+from core import elements
+
+class EmbedContext(NamedTuple):
+    first_frame: bool
+    update: elements.UpdateContext
 
 class Embed(ABC):
     def __init__(self, *args: str):
@@ -16,8 +22,23 @@ class Embed(ABC):
         pass
 
     @abstractmethod
-    def render(self, surface: pygame.Surface, content_spacing: int, approx_datetime: datetime.datetime, progress: float):
-        pass
+    def update(self, context: EmbedContext, progress: float) -> bool | EllipsisType:
+        """
+        Called repeatedly to refresh this embed's data.
+        Return `True` to render this embed with the updated data.
+        Return `...` to render using the previous frame of this embed if possible.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
+        """
+        Render this embed onto a surface with the specified size.
+        Return `None` to clear this area of the screen and adjust the flags-object to modify rendering behaviour.
+
+        Should not modify the state of this embed.
+        """
+        raise NotImplementedError()
 
     @staticmethod
     @abstractmethod
