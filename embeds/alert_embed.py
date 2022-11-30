@@ -92,8 +92,7 @@ class AlertEmbed(embeds.Embed):
 
     def on_disable(self):
         self._alert_index += 1
-        if self._alerts is not None:
-            self._alert_index %= len(self._alerts) # Calculated so that alert_index doesn't cause a memory leak
+        self._alert_index %= math.MAXVALUE # Calculated so that alert_index doesn't cause a memory leak
 
     def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
         debug.set_custom_field("alert_index", "Alert Index", self._alert_index)
