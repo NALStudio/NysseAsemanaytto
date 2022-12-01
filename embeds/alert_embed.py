@@ -1,5 +1,4 @@
 from __future__ import annotations
-import datetime
 import threading
 import time
 from types import EllipsisType
