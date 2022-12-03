@@ -71,7 +71,7 @@ class WeatherEmbed(embeds.Embed):
     def on_disable(self):
         pass
 
-    def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
+    def update(self, context: embeds.EmbedContext) -> bool | EllipsisType:
         if self.weather != self.rendered_weather: # Handles None check, because rendered_weather init is None
             self.rendered_weather = self.weather
             return True

@@ -93,7 +93,7 @@ class AlertEmbed(embeds.Embed):
         self._alert_index += 1
         self._alert_index %= math.MAXVALUE # Calculated so that alert_index doesn't cause a memory leak
 
-    def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
+    def update(self, context: embeds.EmbedContext) -> bool | EllipsisType:
         debug.set_custom_field("alert_index", "Alert Index", self._alert_index)
 
         changes: bool = False
@@ -103,10 +103,8 @@ class AlertEmbed(embeds.Embed):
             changes = self.alert is not None
         else:
             page_count: int = len(self.alert_pages)
-            page_index = int(math.lerp(0, page_count + 1, progress)) # get page index by flooring interpolated value
-            if page_index >= page_count: # It is possible that the page index is greater than the number of pages at the end of the embed cycle.
-                if page_index > page_count: # If the page index is 2 or more over the amount of pages, warn the user.
-                    logging.warning(f"Alert page index {page_index - (page_count - 1)} over the maximum page index.", stack_info=False)
+            page_index = int(math.lerp(0, page_count, context.progress)) # get page index by flooring interpolated value
+            if page_index >= page_count: # It is possible that the page index is greater than the number of pages at the end of the embed cycle when progress is equal to 1.0
                 page_index = page_count - 1
 
             if page_index != self.page_index:

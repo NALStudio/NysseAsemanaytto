@@ -73,7 +73,7 @@ class LineEmbed(embeds.Embed):
     def on_disable(self):
         self.trip = None
 
-    def update(self, context: embeds.EmbedContext, progress: float) -> bool | EllipsisType:
+    def update(self, context: embeds.EmbedContext) -> bool | EllipsisType:
         global last_render_cache_clear, line_render_cache
         if last_render_cache_clear is None or (context.update.time - last_render_cache_clear).days > 1:
             logging.debug("Clearing line render cache... (Schedule)", stack_info=False)

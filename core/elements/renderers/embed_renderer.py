@@ -30,8 +30,9 @@ class EmbedRenderer(elements.ElementRenderer):
                 first_frame = True
 
             embed_on_duration: float = context.time.timestamp() - self.embed_data.enabled_posix_timestamp
-            e_context = embeds.EmbedContext(first_frame, context)
-            res: bool | EllipsisType = self.embed_data.embed.update(e_context, (embed_on_duration / self.embed_data.requested_duration))
+            raw_progress: float = embed_on_duration / self.embed_data.requested_duration
+            e_context = embeds.EmbedContext(first_frame, context, raw_progress)
+            res: bool | EllipsisType = self.embed_data.embed.update(e_context)
             if isinstance(res, bool):
                 changes = res
             else:

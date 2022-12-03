@@ -1,13 +1,25 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from types import EllipsisType
-from typing import NamedTuple
+from typing import Final, NamedTuple
 import pygame
-from core import elements
+from core import elements, logging
+from nalpy import math
+
+MAX_PROGRESS_TOLERANCE: Final[float] = 1.2
 
 class EmbedContext(NamedTuple):
     first_frame: bool
     update: elements.UpdateContext
+    raw_progress: float
+
+    @property
+    def progress(self) -> float:
+        """`raw_progress` clamped to [0, 1]"""
+        raw: float = self.raw_progress
+        if raw > MAX_PROGRESS_TOLERANCE:
+            logging.warning(f"Progress {raw} is over the tolerance line of {MAX_PROGRESS_TOLERANCE}")
+        return math.clamp01(self.raw_progress)
 
 class Embed(ABC):
     def __init__(self, *args: str):
@@ -22,7 +34,7 @@ class Embed(ABC):
         pass
 
     @abstractmethod
-    def update(self, context: EmbedContext, progress: float) -> bool | EllipsisType:
+    def update(self, context: EmbedContext) -> bool | EllipsisType:
         """
         Called repeatedly to refresh this embed's data.
         Return `True` to render this embed with the updated data.

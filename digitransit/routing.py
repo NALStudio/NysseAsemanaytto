@@ -18,7 +18,7 @@ class Coordinate(NamedTuple):
         if not isinstance(lon, int | float):
             raise ValueError("Longitude is not a number!")
 
-        return cls(latitude=lat, longitude=lon)
+        return cls(latitude=float(lat), longitude=float(lon))
 
 class _PatternCodeWrapper(NamedTuple):
     code: str
