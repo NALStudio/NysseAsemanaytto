@@ -1,22 +1,19 @@
-from dataclasses import dataclass
 import datetime
 import threading
 import fmiopendata.multipoint
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, NamedTuple
 
 from core import datetime_utils
 
 import pygame
 
-@dataclass
-class Weather:
+class Weather(NamedTuple):
     time_utc: datetime.datetime
     time_local: datetime.datetime
     temperature: float
     symbol_id: int
 
-@dataclass
-class WeatherFetchParams:
+class WeatherFetchParams(NamedTuple):
     starttime: datetime.datetime
     duration: datetime.timedelta
     timestep_minutes: int | None = None

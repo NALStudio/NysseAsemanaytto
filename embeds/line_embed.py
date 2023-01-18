@@ -42,6 +42,8 @@ class LineEmbed(embeds.Embed):
         self.vehicle_positions: tuple[nysse.vehicle_monitoring.MonitoredVehicleJourney, ...] | None = None
         self.vehicle_request_thread: threading.Thread | None = None
 
+        self.vehicles_rendered: bool = True # Flag is set False after first position fetch
+
     def _get_positions(self, route_shortname: str):
         client_id: str | None = config.current.nysse_api_client_id
         client_secret: str | None = config.current.nysse_api_client_secret
@@ -49,6 +51,7 @@ class LineEmbed(embeds.Embed):
             raise ValueError("Nysse API client ID and client secret must be defined for vehicle positions in line embed.")
 
         self.vehicle_positions = nysse.vehicle_monitoring.get_monitored_vehicle_journeys(client_id, client_secret, route_shortname)
+        self.vehicles_rendered = False
 
     def on_enable(self):
         assert render_info.stopinfo.stoptimes is not None
@@ -62,13 +65,13 @@ class LineEmbed(embeds.Embed):
             logging.warning("Vehicle request thread still active. Waiting for thread to finish...")
             self.vehicle_request_thread.join()
 
-        self.vehicle_positions = None
+        # self.vehicle_positions = None
+        # We want to preserve the last positions because the request is so much slower on a Raspberry Pi
         if self.display_vehicles:
             self.vehicle_request_thread = threading.Thread(target=self._get_positions, args=(route_shortname,), name=f"VehicleRequest_{route_shortname}", daemon=False)
             self.vehicle_request_thread.start()
 
         self.line_rendered: bool = False
-        self.vehicles_rendered: bool = False
 
     def on_disable(self):
         self.trip = None
@@ -83,7 +86,7 @@ class LineEmbed(embeds.Embed):
         if not self.line_rendered:
             self.line_rendered = True
             return True
-        if not self.vehicles_rendered and self.vehicle_positions is not None:
+        if not self.vehicles_rendered:
             self.vehicles_rendered = True
             return True
         return False
