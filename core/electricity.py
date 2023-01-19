@@ -42,7 +42,7 @@ class _ElecticityPricesRequestProvider: # HACK: Passing arguments on thread star
         self.on_finish: Callable[[date, tuple[ElectricityPrice, ...]], Any] = on_finish
 
     def get_prices_for_date(self) -> None:
-        """Prices are sorted from new to old. Method is blocking."""
+        """Prices are sorted from old to new. Method is blocking."""
 
         day_ahead_prices: tuple[ElectricityPrice, ...] = tuple(self._fetch_day_ahead_prices(self.timezone, 5))
         """Sorted from old to new"""
