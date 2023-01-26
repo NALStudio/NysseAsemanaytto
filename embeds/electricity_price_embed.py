@@ -32,16 +32,21 @@ BAR_DEFAULT_SAT: Final[float] = 1.0
 BAR_PAST_SAT: Final[float] = 0.25
 NO_DATA_COLOR: Final[tuple[int, int, int]] = (128, 128, 128)
 
+DATA_PORTION: Final[float] = 0.25 # 0.0 - 1.0
+
 TIME_LINE_COLOUR: Final[tuple[int, int, int]] = (0, 0, 0)
 TIME_LINE_WIDTH: Final[int] = 2
 
 SCALES_COLOR: Final[tuple[int, int, int]] = (192, 192, 192)
+SCALES_COLOR_DARK: Final[tuple[int, int, int]] = (64, 64, 64)
 SCALES_LINE_MARGIN: Final[int] = 10
 SCALES_DATA_MARGIN: Final[int] = 20
 
-BACKGROUND_COLOR = colors.Colors.WHITE
+BACKGROUND_COLOR: Final[tuple[int, int, int]] = (246, 246, 246)
+CARD_COLOR: Final[tuple[int, int, int]] = (252, 252, 252)
 
 electricity_scales_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Regular.ttf")
+electricity_scales_bold_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Bold.ttf")
 
 class ElectricityPricesEmbed(embeds.Embed):
     def __init__(self):
@@ -110,7 +115,12 @@ class ElectricityPricesEmbed(embeds.Embed):
         surf: pygame.Surface = pygame.Surface(size)
         surf.fill(BACKGROUND_COLOR)
 
-        surf.blit(self.render_prices(size, render_scale, prices), (0, 0))
+        data_portion_height: int = round(size[1] * DATA_PORTION)
+        data_margin: int = round(data_portion_height / 6)
+        data_size: tuple[int, int] = (size[0] - 2 * data_margin, data_portion_height - 2 * data_margin)
+        graph_size: tuple[int, int] = (size[0], size[1] - data_portion_height)
+        surf.blit(self.render_data(data_size, data_margin, prices), (data_margin, data_margin))
+        surf.blit(self.render_prices(graph_size, render_scale, prices), (0, data_portion_height))
 
         return surf
 
@@ -124,7 +134,8 @@ class ElectricityPricesEmbed(embeds.Embed):
         height_per_scale: float = size[1] / scales_count
         scale_iter_count: int = scales_count + 1
 
-        scale_prices: list[pygame.Surface] = [electricity_scales_font.get_size(round(size[1] / 30)).render(str(i * value_per_scale), True, (0, 0, 0)) for i in range(scale_iter_count)]
+        font_size: int = round(size[1] / 30)
+        scale_prices: list[pygame.Surface] = [electricity_scales_font.get_size(font_size).render(str(i * value_per_scale), True, SCALES_COLOR_DARK) for i in range(scale_iter_count)]
         scales_data_width: int = max(scale_prices, key=lambda s: s.get_width()).get_width()
         scales_data_width += SCALES_DATA_MARGIN
 
@@ -142,11 +153,10 @@ class ElectricityPricesEmbed(embeds.Embed):
             pygame.draw.line(surf, SCALES_COLOR, (scales_data_width - SCALES_LINE_MARGIN, y), (size[0], y))
 
         # Render price bars
-        hours_start_index: int = prices[0].start.hour
+
         total_bar_width: float = (size[0] - scales_data_width) / PRICE_HOURS_COUNT
         for i in range(PRICE_HOURS_COUNT):
-            price_i: int = i - hours_start_index
-            price: electricity.ElectricityPrice | None = prices[price_i] if 0 <= price_i < len(prices) else None
+            price: electricity.ElectricityPrice | None = get_price_for_hour(i, prices)
 
             left: int = round((total_bar_width * i) + (PADDING / 2))
             right: int = round((total_bar_width * (i + 1)) - (PADDING / 2))
@@ -169,12 +179,67 @@ class ElectricityPricesEmbed(embeds.Embed):
                 surf.blit(bar2, (bar_pos[0] + bar1_width, bar_pos[1]))
 
                 # Draw line for current time
-                time_line_x: int = bar_pos[0] + bar1_width #- round(TIME_LINE_WIDTH / 2) I think pygame moves the line automatically
+                time_line_x: int = bar_pos[0] + bar1_width
+                if TIME_LINE_WIDTH % 2 == 0: # If line has no center-point, prefer to draw one to the left instead of right.
+                    time_line_x -= 1
+
                 pygame.draw.line(surf, TIME_LINE_COLOUR, (time_line_x, 0), (time_line_x, bar_size[1]), width=TIME_LINE_WIDTH)
+                now_text: pygame.Surface = electricity_scales_font.get_size(font_size).render(self._enable_time.strftime("%H:%M"), True, (0, 0, 0))
+                surf.blit(now_text, (time_line_x + 2 * TIME_LINE_WIDTH, 0))
             else: # Data not in the current hour
                 bar_sat: float = BAR_PAST_SAT if price.end <= self._enable_time else BAR_DEFAULT_SAT # Past or future saturation to be used
                 bar: pygame.Surface = self.render_bar(price.price, render_scale, bar_sat, bar_size)
                 surf.blit(bar, bar_pos)
+
+        return surf
+
+    def render_data(self, size: tuple[int, int], center_margin: int, prices: tuple[electricity.ElectricityPrice, ...]) -> pygame.Surface:
+        surf: pygame.Surface = pygame.Surface(size)
+        surf.fill(BACKGROUND_COLOR)
+
+        day_prices: list[electricity.ElectricityPrice | None] = [get_price_for_hour(h, prices) for h in range(PRICE_HOURS_COUNT)]
+        day_price_sum: float = 0.0
+        day_price_count: int = 0
+        now_price: float | None = None
+        for hr, dp in enumerate(day_prices):
+            if dp is None:
+                logging.warning(f"Day price for hour {hr} could not be loaded for average.")
+                continue
+
+            if hr == self._enable_time.hour:
+                now_price = dp.price
+
+            day_price_sum += dp.price
+            day_price_count += 1
+
+        assert now_price is not None
+        average_price: float = day_price_sum / day_price_count
+
+        centerx: int = round(size[0] / 2)
+        border_radius: int = round(size[1] / 4)
+        rect1_right: int = centerx - round(center_margin / 2)
+        rect2_left: int = centerx + round(center_margin / 2)
+        rect1: pygame.Rect = pygame.Rect(0, 0, rect1_right, size[1])
+        rect2: pygame.Rect = pygame.Rect(rect2_left, 0, size[0] - rect2_left, size[1])
+        pygame.draw.rect(surf, colors.Colors.WHITE, rect1, border_radius=border_radius)
+        pygame.draw.rect(surf, colors.Colors.WHITE, rect2, border_radius=border_radius)
+
+        price_height: int = round(size[1] * 0.3)
+        price_text_height: int = round(price_height / 1.5)
+        price_line_height: int = round(size[1] * 0.6)
+        price_text_margin: int = round(size[1] * 0.2)
+
+        now_price_rnd = data_price_with_color(price_height, price_line_height, now_price)
+        now_price_rnd_left: int = rect1.right - now_price_rnd.get_width() - price_text_margin
+        now_text_rnd = electricity_scales_font.get_size(price_text_height).render("Hinta Nyt", True, (0, 0, 0))
+        surf.blit(now_price_rnd, (now_price_rnd_left, rect1.centery - now_price_rnd.get_height() / 2))
+        surf.blit(now_text_rnd, (round(math.lerp(rect1.left, now_price_rnd_left, 0.5) - now_text_rnd.get_width() / 2), rect1.centery - now_text_rnd.get_height() / 2))
+
+        average_price_rnd = data_price_with_color(price_height, price_line_height, average_price)
+        average_price_rnd_left: int = rect2.right - average_price_rnd.get_width() - price_text_margin
+        average_text_rnd = electricity_scales_font.get_size(price_text_height).render("Päivän Keskiarvo", True, (0, 0, 0))
+        surf.blit(average_price_rnd, (average_price_rnd_left, rect2.centery - average_price_rnd.get_height() / 2))
+        surf.blit(average_text_rnd, (round(math.lerp(rect2.left, average_price_rnd_left, 0.5) - average_text_rnd.get_width() / 2), rect2.centery - average_text_rnd.get_height() / 2))
 
         return surf
 
@@ -188,9 +253,11 @@ class ElectricityPricesEmbed(embeds.Embed):
 
     @staticmethod
     def _render_bar(size: tuple[int, int], height: int, color: tuple[int, int, int]) -> pygame.Surface:
+        border_radius: int = round(size[0] / 4)
+
         rect: tuple[int, int, int, int] = (0, size[1] - height, size[0], height)
         surf: pygame.Surface = pygame.Surface(size, pygame.SRCALPHA)
-        pygame.draw.rect(surf, color, rect)
+        pygame.draw.rect(surf, color, rect, border_top_left_radius=border_radius, border_top_right_radius=border_radius)
 
         return surf
 
@@ -244,3 +311,29 @@ class ElectricityPricesEmbed(embeds.Embed):
 
     def requested_duration(self) -> float:
         return 15.0
+
+def data_price_with_color(ref_height: int, line_height: int, price: float) -> pygame.Surface:
+    text: pygame.Surface = electricity_scales_bold_font.get_size(ref_height).render(f"{price:.2f} snt/kWh", True, (0, 0, 0))
+    height: int = text.get_height()
+
+    line_thickness: int = round(line_height * 0.2)
+    line_margin: int = line_thickness
+    line_x: int = text.get_width() + line_margin
+
+    surf: pygame.Surface = pygame.Surface((line_x + line_thickness, max(height, line_height)), flags=pygame.SRCALPHA)
+    surf.blit(text, (0, round(surf.get_height() / 2 - text.get_height() / 2)))
+
+    line_rect: tuple[int, int, int, int] = (line_x, round((surf.get_height() - line_height) / 2), line_thickness, line_height)
+    line_color: tuple[int, int, int] = ElectricityPricesEmbed._get_price_colour(price, BAR_DEFAULT_SAT)
+    pygame.draw.rect(surf, line_color, line_rect, border_radius=round(line_thickness / 2))
+
+    return surf
+
+def get_price_for_hour(hour: int, prices: tuple[electricity.ElectricityPrice, ...]) -> electricity.ElectricityPrice | None:
+    hours_start_index: int = prices[0].start.hour
+    price_i: int = hour - hours_start_index
+    price: electricity.ElectricityPrice | None = prices[price_i] if 0 <= price_i < len(prices) else None
+    if price is not None:
+        assert price.start.hour == hour
+
+    return price
