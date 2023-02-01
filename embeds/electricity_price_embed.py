@@ -1,15 +1,16 @@
 from __future__ import annotations
-from datetime import date, datetime, tzinfo
+
 import threading
+from datetime import date, datetime, tzinfo
 from types import EllipsisType
 from typing import Final, NamedTuple
 
 import pygame
-from core import elements, electricity, colors, logging, font_helper
-
 from nalpy import math
 
 import embeds
+from core import colors, electricity, elements, font_helper, logging
+
 
 class _ElectricityScale(NamedTuple):
     max_value: int
@@ -212,7 +213,6 @@ class ElectricityPricesEmbed(embeds.Embed):
             day_price_sum += dp.price
             day_price_count += 1
 
-        assert now_price is not None
         average_price: float = day_price_sum / day_price_count
 
         centerx: int = round(size[0] / 2)
@@ -229,7 +229,7 @@ class ElectricityPricesEmbed(embeds.Embed):
         price_line_height: int = round(size[1] * 0.6)
         price_text_margin: int = round(size[1] * 0.2)
 
-        now_price_rnd = data_price_with_color(price_height, price_line_height, now_price)
+        now_price_rnd = data_price_with_color(price_height, price_line_height, now_price if now_price is not None else math.NEGATIVEINFINITY)
         now_price_rnd_left: int = rect1.right - now_price_rnd.get_width() - price_text_margin
         now_text_rnd = electricity_scales_font.get_size(price_text_height).render("Hinta Nyt", True, (0, 0, 0))
         surf.blit(now_price_rnd, (now_price_rnd_left, rect1.centery - now_price_rnd.get_height() / 2))
