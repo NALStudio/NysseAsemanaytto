@@ -173,11 +173,13 @@ class ElectricityPricesEmbed(embeds.Embed):
             elif price.start < self._enable_time < price.end: # Data on the current hour (split into past and future bars)
                 bar1_width: int = round(math.remap(self._enable_time.timestamp(), price.start.timestamp(), price.end.timestamp(), 0.0, bar_size[0]))
 
-                bar1: pygame.Surface = self.render_bar(price.price, render_scale, BAR_PAST_SAT, (bar1_width, bar_size[1]))
-                bar2: pygame.Surface = self.render_bar(price.price, render_scale, BAR_DEFAULT_SAT, (bar_size[0] - bar1_width, bar_size[1]))
+                bar1: pygame.Surface = self.render_bar(price.price, render_scale, BAR_PAST_SAT, bar_size)
+                bar2: pygame.Surface = self.render_bar(price.price, render_scale, BAR_DEFAULT_SAT, bar_size)
 
-                surf.blit(bar1, bar_pos)
-                surf.blit(bar2, (bar_pos[0] + bar1_width, bar_pos[1]))
+                surf.blit(bar2, bar_pos)
+
+                bar1_of_timesize: pygame.Surface = bar1.subsurface((0, 0, bar1_width, bar_size[1]))
+                surf.blit(bar1_of_timesize, bar_pos)
 
                 # Draw line for current time
                 time_line_x: int = bar_pos[0] + bar1_width
@@ -229,7 +231,7 @@ class ElectricityPricesEmbed(embeds.Embed):
         price_line_height: int = round(size[1] * 0.6)
         price_text_margin: int = round(size[1] * 0.2)
 
-        now_price_rnd = data_price_with_color(price_height, price_line_height, now_price if now_price is not None else math.NEGATIVEINFINITY)
+        now_price_rnd = data_price_with_color(price_height, price_line_height, now_price if now_price is not None else math.NEGATIVE_INFINITY)
         now_price_rnd_left: int = rect1.right - now_price_rnd.get_width() - price_text_margin
         now_text_rnd = electricity_scales_font.get_size(price_text_height).render("Hinta Nyt", True, (0, 0, 0))
         surf.blit(now_price_rnd, (now_price_rnd_left, rect1.centery - now_price_rnd.get_height() / 2))
