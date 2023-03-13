@@ -19,12 +19,11 @@ class _ElectricityScale(NamedTuple):
     hue_val: float = 0.8
 
 _scales: Final[tuple[_ElectricityScale, ...]] = ( # max_value from small => big. Recommended to be divisible by scale_step
-    _ElectricityScale(0,   2, 240),
-    _ElectricityScale(4,   2, 180),
-    _ElectricityScale(10,  2, 120),
-    _ElectricityScale(30,  5, 60),
-    _ElectricityScale(50,  5, 0),
-    _ElectricityScale(100, 5, 0, hue_val=0.0)
+    _ElectricityScale(0,   2, 180),
+    _ElectricityScale(6,   2, 120),
+    _ElectricityScale(20,  5, 60),
+    _ElectricityScale(40,  5, 0),
+    _ElectricityScale(60, 5, 0, hue_val=0.0)
 )
 
 PADDING: Final[float] = 2.0
