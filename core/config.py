@@ -11,11 +11,27 @@ import os
 
 RequiredT = TypeVar('RequiredT', bound=object)
 class Required(NamedTuple, Generic[RequiredT]):
-    value: RequiredT | None
+    value_: RequiredT | None
+
+    @property
+    def value(self) -> RequiredT:
+        if self.value_ is None:
+            raise RuntimeError("Required config value not set.")
+        return self.value_
+
 NotDefined = Required(None)
 
 @dataclass
 class Config:
+
+    endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
+    """The Digitransit API endpoint you want to send requests to. Can be targeted to a server hosted locally."""
+
+    api_key: Required[str] = NotDefined
+    """Digitransit API key is required for the application to function."""
+
+    poll_rate: int = 30
+    """How often to refresh the departure data. Waits the specified amount of seconds between requests. (If you are not self-hosting the server, you should avoid doing more than 10 requests per second to reduce load on Digitransit's servers.)"""
 
     stopcode: int = 3522
     """A number (i.e. `3522`). If stopcode includes any leading zeros, strip them (i.e. `0825` => `825`)."""
@@ -28,12 +44,6 @@ class Config:
 
     omit_canceled: bool = False
     """Hide canceled departures."""
-
-    poll_rate: int = 30
-    """How often to refresh the departure data. Waits the specified amount of seconds between requests. (If you are not self-hosting the server, you should avoid doing more than 10 requests per second to reduce load on Digitransit's servers.)"""
-
-    endpoint: str = "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql"
-    """The Digitransit API endpoint you want to send requests to. Can be targeted to a server hosted locally."""
 
     window_size: tuple[int, int] = (360, 640) # Value loaded from json is a list
     """The size of the window"""
@@ -100,6 +110,9 @@ class Config:
             #     logging.error(f"Value '{v}' cannot be assigned to key '{k}' with value '{original_value}' and will be skipped")
             #     continue
 
+            original_value = getattr(conf, k, None)
+            if original_value is NotDefined:
+                v = Required(v) if v is not None else NotDefined
             setattr(conf, k, v)
 
         return conf
@@ -116,7 +129,7 @@ class Config:
             current_value: Any = getattr(config, k)
             if default_value == current_value and default_value is not NotDefined:  # If value is same as default
                 continue
-            selected_save: str | int | float | bool | None = current_value if default_value is not NotDefined else None
+            selected_save: str | int | float | bool | None = current_value if current_value is not NotDefined else None
 
             to_save[k] = selected_save
 

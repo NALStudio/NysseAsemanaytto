@@ -118,7 +118,7 @@ class Pattern:
         self.geometry: list[Coordinate] = [Coordinate.create_from_json(**coordinate) for coordinate in geometry]
 
 
-def get_stop_info(endpoint: str, stop_gtfsId: str, numberOfDepartures: int | None = None, omitNonPickups: bool | None = None, omitCanceled: bool | None = None) -> Stop:
+def get_stop_info(endpoint: str, api_key: str, stop_gtfsId: str, numberOfDepartures: int | None = None, omitNonPickups: bool | None = None, omitCanceled: bool | None = None) -> Stop:
     query = """{
   stop(STOPARGS) {
     gtfsId
@@ -157,9 +157,9 @@ def get_stop_info(endpoint: str, stop_gtfsId: str, numberOfDepartures: int | Non
     query = _replace_with_arguments(query, "(STOPARGS)", ("id", stop_gtfsId))
     query = _replace_with_arguments(query, "(TIMESARGS)", ("numberOfDepartures", numberOfDepartures), ("omitNonPickups", omitNonPickups), ("omitCanceled", omitCanceled))
 
-    return _make_request(endpoint, query, "stop", Stop)
+    return _make_request(endpoint, api_key, query, "stop", Stop)
 
-def get_alerts(endpoint: str, feeds: list[str] | tuple[str, ...]) -> list[Alert]: # Apparently Sequence[str] allows the user to put in a bare string
+def get_alerts(endpoint: str, api_key: str, feeds: list[str] | tuple[str, ...]) -> list[Alert]: # Apparently Sequence[str] allows the user to put in a bare string
     query = """{
   alerts(ALERTSARGS) {
     feed
@@ -195,9 +195,9 @@ def get_alerts(endpoint: str, feeds: list[str] | tuple[str, ...]) -> list[Alert]
     def constructor(data: dict[str, list[dict[str, Any]]]) -> list[Alert]:
         return [Alert(**params) for params in data["alerts"]]
 
-    return _make_request(endpoint, query, None, constructor)
+    return _make_request(endpoint, api_key, query, None, constructor)
 
-def get_pattern(endpoint: str, pattern_code: str) -> Pattern:
+def get_pattern(endpoint: str, api_key: str, pattern_code: str) -> Pattern:
     query = """{
   pattern(PATTERNARGS) {
     name
@@ -225,13 +225,13 @@ def get_pattern(endpoint: str, pattern_code: str) -> Pattern:
 """
     query = _replace_with_arguments(query, "(PATTERNARGS)", ("id", pattern_code))
 
-    return _make_request(endpoint, query, "pattern", Pattern)
+    return _make_request(endpoint, api_key, query, "pattern", Pattern)
 
 
-def _make_request(endpoint: str, query: str, expected_data_key: str | None, constructor: Callable[..., _T]) -> _T:
+def _make_request(endpoint: str, api_key: str, query: str, expected_data_key: str | None, constructor: Callable[..., _T]) -> _T:
     jsonString = "{\"query\": " + json.dumps(query) + "}"
 
-    response = requests.post(endpoint, jsonString, headers={"content-type": "application/json"})
+    response = requests.post(endpoint, jsonString, headers={"content-type": "application/json", "digitransit-subscription-key": api_key})
     if not response.ok:
         raise RuntimeError(f"Invalid response! Response below:\n{response.content}")
 

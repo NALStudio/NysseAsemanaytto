@@ -16,7 +16,7 @@ def update_stopinfo() -> None:
     global stopinfo
     _logging.info("Fetching stop info...", stack_info=False)
     try:
-        stopinfo = _routing.get_stop_info(_config.current.endpoint, get_stop_gtfsId(), _config.current.departure_count, _config.current.omit_non_pickups, _config.current.omit_canceled)
+        stopinfo = _routing.get_stop_info(_config.current.endpoint, _config.current.api_key.value, get_stop_gtfsId(), _config.current.departure_count, _config.current.omit_non_pickups, _config.current.omit_canceled)
     except Exception as e:
         _logging.dump_exception(e, _threading.current_thread(), "requestFail")
 

@@ -41,7 +41,7 @@ class AlertEmbed(embeds.Embed):
         self._first_alert_loaded: bool = False
 
     def load_and_filter_alerts(self):
-        alerts = digitransit.routing.get_alerts(config.current.endpoint, ("tampere",))
+        alerts = digitransit.routing.get_alerts(config.current.endpoint, config.current.api_key.value, ("tampere",))
 
         filtered_alerts = [alert for alert in alerts if _alert_meets_filter_requirements(alert, self.include_global, self.include_local)]
 

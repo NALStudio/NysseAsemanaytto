@@ -370,7 +370,7 @@ def render_embed_for_pattern(patternCode: str, size: tuple[int, int]) -> CachedL
 def _get_pattern(patternCode: str) -> digitransit.routing.Pattern | None:
     pattern: digitransit.routing.Pattern | None = None
     try:
-        pattern = digitransit.routing.get_pattern(config.current.endpoint, patternCode)
+        pattern = digitransit.routing.get_pattern(config.current.endpoint, config.current.api_key.value, patternCode)
     except Exception as e:
         logging.dump_exception(e, note="lineEmbed")
 
