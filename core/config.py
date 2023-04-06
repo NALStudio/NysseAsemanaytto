@@ -129,7 +129,13 @@ class Config:
             current_value: Any = getattr(config, k)
             if default_value == current_value and default_value is not NotDefined:  # If value is same as default
                 continue
-            selected_save: str | int | float | bool | None = current_value if current_value is not NotDefined else None
+            selected_save: str | int | float | bool | None
+            if current_value is NotDefined:
+                selected_save = None
+            elif isinstance(current_value, Required):
+                selected_save = current_value.value
+            else:
+                selected_save = current_value
 
             to_save[k] = selected_save
 
