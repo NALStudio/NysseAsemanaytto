@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import threading
-from datetime import date, datetime, tzinfo
+from datetime import date, datetime, time, timedelta, tzinfo
 from types import EllipsisType
 from typing import Final, NamedTuple
 
@@ -9,7 +8,7 @@ import pygame
 from nalpy import math
 
 import embeds
-from core import colors, electricity, elements, font_helper, logging
+from core import colors, electricity, elements, font_helper, logging, datetime_utils
 
 
 class _ElectricityScale(NamedTuple):
@@ -48,51 +47,57 @@ CARD_COLOR: Final[tuple[int, int, int]] = (252, 252, 252)
 electricity_scales_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Regular.ttf")
 electricity_scales_bold_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/OpenSans-Bold.ttf")
 
+def get_max_price(prices: tuple[electricity.ElectricityPrice | None, ...]) -> electricity.ElectricityPrice:
+    return max((pi for pi in prices if pi is not None), key=lambda pk: pk.price)
+
 class ElectricityPricesEmbed(embeds.Embed):
     def __init__(self):
-        self.price_lock: threading.Lock = threading.Lock()
-        self.prices: tuple[electricity.ElectricityPrice, ...] | None = None
+        self.today_prices: tuple[electricity.ElectricityPrice | None, ...] | None = None
         """Ordered from old to new."""
+        self.today_prices_date: date | None = None
 
-        self.prices_date: date | None = None
+        self.next_day_prices: tuple[electricity.ElectricityPrice | None, ...] | None = None
+        """Ordered from old to new."""
+        self.next_day_prices_date: date | None = None
 
-        self.rerender: bool = False
+        self.render_future_prices: bool = False
 
-    def _set_prices(self, date: date, prices: tuple[electricity.ElectricityPrice, ...]):
-        assert len(prices) > 0
-        with self.price_lock:
-            if self.prices is None:
-                self.prices = prices
+    def _set_today_prices(self, _: date, prices: tuple[electricity.ElectricityPrice | None, ...]):
+        self.today_prices = prices
 
-            max_existing_index: int = len(self.prices) - 1
-            while max_existing_index >= 0 and self.prices[max_existing_index].end >= prices[0].end: # While latest data from max is newer or as old as than oldest price data.
-                max_existing_index -= 1
-
-            self.prices = self.prices[:(max_existing_index + 1)] + prices
-            self.prices = tuple(filter(lambda ep: ep.start.date() >= date, self.prices))
-
-        self.rerender = True
-
+    def _set_next_day_prices(self, _: date, prices: tuple[electricity.ElectricityPrice | None, ...]):
+        self.next_day_prices = prices
 
     def on_enable(self):
         now: datetime = datetime.now().astimezone(None) # Add timezone info to now call
+        today: date = now.date()
         self._enable_time: datetime = now
 
-        local_date: date = now.date()
-        now_timezone: tzinfo | None = now.tzinfo
-        assert now_timezone is not None
-        if self.prices_date is None or self.prices_date != local_date:
-            logging.info(f"Loading new electricity pricing data...", stack_info=False)
-            electricity.get_prices_for_date(local_date, now_timezone, self._set_prices)
-            self.prices_date = local_date
+        if self.today_prices_date is None:
+            self.today_prices_date = today
+            logging.info(f"Loading first electricity pricing data...", stack_info=False)
+            electricity.get_prices_for_date(now, self._set_today_prices)
+        elif self.today_prices_date < today:
+            logging.info("Using preloaded next day prices after midnight.", stack_info=False)
+            assert self.next_day_prices_date == today
+            self.today_prices = self.next_day_prices
+            self.today_prices_date = self.next_day_prices_date
+
+            self.next_day_prices = None
+            self.next_day_prices_date = None
+
+        if self.next_day_prices_date is None and now > electricity.get_earliest_time_for_next_day_prices(now):
+            nextday: datetime = now + timedelta(days=1)
+            self.next_day_prices_date = nextday.date()
+            logging.info("Loading first next day electricity pricing data...", stack_info=False)
+            electricity.get_prices_for_date(nextday, self._set_next_day_prices)
 
     def on_disable(self):
-        pass
+        self.render_future_prices = False
 
     def update(self, context: embeds.EmbedContext) -> bool | EllipsisType:
-        if self.rerender:
-            self.rerender = False
-            # Update is single-threaded so flag can be set after check because no other threads should set this as False.
+        if self.next_day_prices is not None and context.progress > 0.5 and not self.render_future_prices:
+            self.render_future_prices = True
             return True
 
         return context.first_frame
@@ -100,16 +105,14 @@ class ElectricityPricesEmbed(embeds.Embed):
     def render(self, size: tuple[int, int], flags: elements.RenderFlags) -> pygame.Surface | None:
         flags.clear_background = False # No need to clear background because surface is solid
 
-        prices: tuple[electricity.ElectricityPrice] | None
-        with self.price_lock:
-            prices = self.prices
+        are_future_prices: bool = self.render_future_prices
+        prices: tuple[electricity.ElectricityPrice | None, ...] | None = self.today_prices if not are_future_prices else self.next_day_prices
 
         if prices is None:
             logging.debug("Electricity price data is not loaded yet! Cancelling electricity price embed rendering...", stack_info=False)
             return None
 
-
-        max_price: electricity.ElectricityPrice = max(prices, key=lambda p: p.price)
+        max_price: electricity.ElectricityPrice = get_max_price(prices)
         render_scale: _ElectricityScale = self.smallest_render_scale(max_price.price)
 
         surf: pygame.Surface = pygame.Surface(size)
@@ -119,12 +122,14 @@ class ElectricityPricesEmbed(embeds.Embed):
         data_margin: int = round(data_portion_height / 6)
         data_size: tuple[int, int] = (size[0] - 2 * data_margin, data_portion_height - 2 * data_margin)
         graph_size: tuple[int, int] = (size[0], size[1] - data_portion_height)
-        surf.blit(self.render_data(data_size, data_margin, prices), (data_margin, data_margin))
+        surf.blit(self.render_data(data_size, data_margin, prices, are_future_prices), (data_margin, data_margin))
         surf.blit(self.render_prices(graph_size, render_scale, prices), (0, data_portion_height))
 
         return surf
 
-    def render_prices(self, size: tuple[int, int], render_scale: _ElectricityScale, prices: tuple[electricity.ElectricityPrice, ...]) -> pygame.Surface:
+    def render_prices(self, size: tuple[int, int], render_scale: _ElectricityScale, prices: tuple[electricity.ElectricityPrice | None, ...]) -> pygame.Surface:
+        assert len(prices) == PRICE_HOURS_COUNT
+
         surf: pygame.Surface = pygame.Surface(size)
         surf.fill(BACKGROUND_COLOR)
 
@@ -156,7 +161,7 @@ class ElectricityPricesEmbed(embeds.Embed):
 
         total_bar_width: float = (size[0] - scales_data_width) / PRICE_HOURS_COUNT
         for i in range(PRICE_HOURS_COUNT):
-            price: electricity.ElectricityPrice | None = get_price_for_hour(i, prices)
+            price: electricity.ElectricityPrice | None = prices[i]
 
             left: int = round((total_bar_width * i) + (PADDING / 2))
             right: int = round((total_bar_width * (i + 1)) - (PADDING / 2))
@@ -165,12 +170,19 @@ class ElectricityPricesEmbed(embeds.Embed):
             bar_pos: tuple[int, int] = (left + scales_data_width, 0)
             del left, right
 
-
             if price is None: # No data
                 bar: pygame.Surface = self._render_bar(bar_size, int(bar_size[1] * 0.8), NO_DATA_COLOR)
                 surf.blit(bar, bar_pos)
-            elif price.start < self._enable_time < price.end: # Data on the current hour (split into past and future bars)
-                bar1_width: int = round(math.remap(self._enable_time.timestamp(), price.start.timestamp(), price.end.timestamp(), 0.0, bar_size[0]))
+                continue
+
+            assert price.hour == i
+
+            if price.date == self._enable_time.date() and price.hour == self._enable_time.hour: # Data on the current hour (split into past and future bars)
+                seconds_after_midnight: float = datetime_utils.time_after_midnight(self._enable_time.time()).total_seconds()
+                hours_after_midnight: float = seconds_after_midnight / 3600.0
+                current_price_progress: float = hours_after_midnight - price.hour
+
+                bar1_width: int = round(bar_size[0] * current_price_progress)
 
                 bar1: pygame.Surface = self.render_bar(price.price, render_scale, BAR_PAST_SAT, bar_size)
                 bar2: pygame.Surface = self.render_bar(price.price, render_scale, BAR_DEFAULT_SAT, bar_size)
@@ -189,58 +201,77 @@ class ElectricityPricesEmbed(embeds.Embed):
                 now_text: pygame.Surface = electricity_scales_font.get_size(font_size).render(self._enable_time.strftime("%H:%M"), True, (0, 0, 0))
                 surf.blit(now_text, (time_line_x + 2 * TIME_LINE_WIDTH, 0))
             else: # Data not in the current hour
-                bar_sat: float = BAR_PAST_SAT if price.end <= self._enable_time else BAR_DEFAULT_SAT # Past or future saturation to be used
+                bar_sat: float = BAR_PAST_SAT if price.hour < self._enable_time.hour else BAR_DEFAULT_SAT # Past or future saturation to be used
                 bar: pygame.Surface = self.render_bar(price.price, render_scale, bar_sat, bar_size)
                 surf.blit(bar, bar_pos)
 
         return surf
 
-    def render_data(self, size: tuple[int, int], center_margin: int, prices: tuple[electricity.ElectricityPrice, ...]) -> pygame.Surface:
+    def _render_data_module(self, surf: pygame.Surface, rect: math.RectInt, label: str, price: float) -> None:
+        price_height: int = round(rect.h * 0.3)
+        label_height: int = round(price_height / 1.5)
+        price_line_height: int = round(rect.h * 0.6)
+        price_margin: int = round(rect.h * 0.2)
+
+        border_radius: int = round(rect.h / 4)
+
+        approx_center_y: int = rect.top + round(rect.h / 2)
+
+        pygame.draw.rect(surf, colors.Colors.WHITE, rect, border_radius=border_radius)
+
+        price_rnd = data_price_with_color(price_height, price_line_height, price)
+        price_rnd_left: int = rect.right - price_rnd.get_width() - price_margin
+        price_rnd_top: int = approx_center_y - round(price_rnd.get_height() / 2)
+        surf.blit(price_rnd, (price_rnd_left, price_rnd_top))
+
+        label_rnd = electricity_scales_font.get_size(label_height).render(label, True, (0, 0, 0))
+        label_rnd_left: int = round(math.lerp(rect.left, price_rnd_left, 0.5) - label_rnd.get_width() / 2)
+        label_rnd_top: int = approx_center_y - round(label_rnd.get_height() / 2)
+        surf.blit(label_rnd, (label_rnd_left, label_rnd_top))
+
+
+    def render_data(self, size: tuple[int, int], center_margin: int, prices: tuple[electricity.ElectricityPrice | None, ...], are_future_prices: bool) -> pygame.Surface:
+        assert len(prices) == PRICE_HOURS_COUNT
+
         surf: pygame.Surface = pygame.Surface(size)
         surf.fill(BACKGROUND_COLOR)
 
-        day_prices: list[electricity.ElectricityPrice | None] = [get_price_for_hour(h, prices) for h in range(PRICE_HOURS_COUNT)]
         day_price_sum: float = 0.0
         day_price_count: int = 0
         now_price: float | None = None
-        for hr, dp in enumerate(day_prices):
-            if dp is None:
-                logging.warning(f"Day price for hour {hr} could not be loaded for average.")
+        max_price: float | None = None
+        for i in range(PRICE_HOURS_COUNT):
+            price: electricity.ElectricityPrice | None = prices[i]
+            if price is None:
+                logging.warning(f"Day price for hour {price} could not be loaded for average.")
                 continue
 
-            if hr == self._enable_time.hour:
-                now_price = dp.price
+            assert i == price.hour
 
-            day_price_sum += dp.price
+            if price.hour == self._enable_time.hour and price.date == self._enable_time.date():
+                now_price = price.price
+            if max_price is None or price.price > max_price:
+                max_price = price.price
+
+            day_price_sum += price.price
             day_price_count += 1
 
         average_price: float = day_price_sum / day_price_count
 
         centerx: int = round(size[0] / 2)
-        border_radius: int = round(size[1] / 4)
-        rect1_right: int = centerx - round(center_margin / 2)
-        rect2_left: int = centerx + round(center_margin / 2)
-        rect1: pygame.Rect = pygame.Rect(0, 0, rect1_right, size[1])
-        rect2: pygame.Rect = pygame.Rect(rect2_left, 0, size[0] - rect2_left, size[1])
-        pygame.draw.rect(surf, colors.Colors.WHITE, rect1, border_radius=border_radius)
-        pygame.draw.rect(surf, colors.Colors.WHITE, rect2, border_radius=border_radius)
+        center_offset: int = round(center_margin / 2)
+        data_module_1_rect: math.RectInt = math.RectInt.from_sides(0, 0, centerx - center_offset, size[1])
+        data_module_2_rect: math.RectInt = math.RectInt.from_sides(centerx + center_offset, 0, size[0], size[1])
 
-        price_height: int = round(size[1] * 0.3)
-        price_text_height: int = round(price_height / 1.5)
-        price_line_height: int = round(size[1] * 0.6)
-        price_text_margin: int = round(size[1] * 0.2)
+        data_module_1_label: str = "Hinta Nyt" if not are_future_prices else "Huomisen Maksimi"
+        data_module_1_value: float | None = now_price if not are_future_prices else max_price
+        if data_module_1_value is None:
+            data_module_1_value = math.NEGATIVE_INFINITY
 
-        now_price_rnd = data_price_with_color(price_height, price_line_height, now_price if now_price is not None else math.NEGATIVE_INFINITY)
-        now_price_rnd_left: int = rect1.right - now_price_rnd.get_width() - price_text_margin
-        now_text_rnd = electricity_scales_font.get_size(price_text_height).render("Hinta Nyt", True, (0, 0, 0))
-        surf.blit(now_price_rnd, (now_price_rnd_left, rect1.centery - now_price_rnd.get_height() / 2))
-        surf.blit(now_text_rnd, (round(math.lerp(rect1.left, now_price_rnd_left, 0.5) - now_text_rnd.get_width() / 2), rect1.centery - now_text_rnd.get_height() / 2))
+        data_module_2_label: str = "Päivän Keskiarvo" if not are_future_prices else "Huomisen Keskiarvo"
 
-        average_price_rnd = data_price_with_color(price_height, price_line_height, average_price)
-        average_price_rnd_left: int = rect2.right - average_price_rnd.get_width() - price_text_margin
-        average_text_rnd = electricity_scales_font.get_size(price_text_height).render("Päivän Keskiarvo", True, (0, 0, 0))
-        surf.blit(average_price_rnd, (average_price_rnd_left, rect2.centery - average_price_rnd.get_height() / 2))
-        surf.blit(average_text_rnd, (round(math.lerp(rect2.left, average_price_rnd_left, 0.5) - average_text_rnd.get_width() / 2), rect2.centery - average_text_rnd.get_height() / 2))
+        self._render_data_module(surf, data_module_1_rect, data_module_1_label, data_module_1_value)
+        self._render_data_module(surf, data_module_2_rect, data_module_2_label, average_price)
 
         return surf
 
@@ -329,12 +360,3 @@ def data_price_with_color(ref_height: int, line_height: int, price: float) -> py
     pygame.draw.rect(surf, line_color, line_rect, border_radius=round(line_thickness / 2))
 
     return surf
-
-def get_price_for_hour(hour: int, prices: tuple[electricity.ElectricityPrice, ...]) -> electricity.ElectricityPrice | None:
-    hours_start_index: int = prices[0].start.hour
-    price_i: int = hour - hours_start_index
-    price: electricity.ElectricityPrice | None = prices[price_i] if 0 <= price_i < len(prices) else None
-    if price is not None:
-        assert price.start.hour == hour
-
-    return price
