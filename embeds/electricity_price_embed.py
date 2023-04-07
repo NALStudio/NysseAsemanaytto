@@ -177,8 +177,12 @@ class ElectricityPricesEmbed(embeds.Embed):
 
             assert price.hour == i
 
-            if price.date == self._enable_time.date() and price.hour == self._enable_time.hour: # Data on the current hour (split into past and future bars)
-                seconds_after_midnight: float = datetime_utils.time_after_midnight(self._enable_time.time()).total_seconds()
+            enable_date: date = self._enable_time.date()
+            enable_time: time = self._enable_time.time()
+            enable_hour: int = self._enable_time.hour
+
+            if price.date == enable_date and price.hour == enable_hour: # Data on the current hour (split into past and future bars)
+                seconds_after_midnight: float = datetime_utils.time_after_midnight(enable_time).total_seconds()
                 hours_after_midnight: float = seconds_after_midnight / 3600.0
                 current_price_progress: float = hours_after_midnight - price.hour
 
@@ -198,10 +202,10 @@ class ElectricityPricesEmbed(embeds.Embed):
                     time_line_x -= 1
 
                 pygame.draw.line(surf, TIME_LINE_COLOUR, (time_line_x, 0), (time_line_x, bar_size[1]), width=TIME_LINE_WIDTH)
-                now_text: pygame.Surface = electricity_scales_font.get_size(font_size).render(self._enable_time.strftime("%H:%M"), True, (0, 0, 0))
+                now_text: pygame.Surface = electricity_scales_font.get_size(font_size).render(enable_time.strftime("%H:%M"), True, (0, 0, 0))
                 surf.blit(now_text, (time_line_x + 2 * TIME_LINE_WIDTH, 0))
             else: # Data not in the current hour
-                bar_sat: float = BAR_PAST_SAT if price.hour < self._enable_time.hour else BAR_DEFAULT_SAT # Past or future saturation to be used
+                bar_sat: float = BAR_PAST_SAT if price.date == enable_date and price.hour < enable_hour else BAR_DEFAULT_SAT # Past or future saturation to be used
                 bar: pygame.Surface = self.render_bar(price.price, render_scale, bar_sat, bar_size)
                 surf.blit(bar, bar_pos)
 

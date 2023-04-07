@@ -73,7 +73,7 @@ class _ElecticityPricesRequestProvider: # HACK: Passing arguments on thread star
         prices: list[ElectricityPrice | None] = self._get_prices(day_ahead_prices, self.fetch_date)
         for hour in range(len(prices)):
             if prices[hour] is None:
-                logging.debug(f"Fetching single hour data for hour: {hour}")
+                logging.debug(f"Fetching single hour data for hour: {hour}", stack_info=False)
                 prices[hour] = self._fetch_price(self.fetch_date, hour)
 
         self.on_finish(self.fetch_date, tuple(prices))
@@ -134,3 +134,7 @@ class _ElecticityPricesRequestProvider: # HACK: Passing arguments on thread star
                 retries += 1
                 if retries > max_retries:
                     raise RuntimeError(f"Invalid response! Response below:\n{resp.content}")
+
+        price: Any = json.loads(price_json)["price"]
+        assert isinstance(price, float)
+        return ElectricityPrice(price, _date, hour)
