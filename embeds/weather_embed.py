@@ -24,7 +24,7 @@ class WeatherDatapoint(NamedTuple):
             symbol_id=weather.symbol_id
         )
 
-def _round_datetime_to_nearest_third_hour(dt: datetime.datetime):
+def _round_datetime_to_nearest_third_hour(dt: datetime.datetime) -> datetime.datetime:
     total_hours: float = dt.hour + dt.minute / 60.0
     rounded_hours: int = math.round_to_nearest_n(total_hours, 3)
     add_days, set_hours = divmod(rounded_hours, 24)
@@ -47,7 +47,10 @@ class WeatherEmbed(embeds.Embed):
 
         self.current_weather_time_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "weather embed time rendering")
         self.stat_weather_time_font: font_helper.SizedFont = font_helper.SizedFont("resources/fonts/Lato-Regular.ttf", "weather embed time rendering")
-        self.hour_count: int = 11 # (datapoint_count * 3) - 1
+
+        self.hours_between_datapoints: int = 3
+        self.datapoint_count: int = 4
+        self.hour_count: int = (self.datapoint_count * self.hours_between_datapoints) - 1
 
     def _set_weather(self, weather: Iterable[weather_handler.Weather]):
         self.weather = [WeatherDatapoint.from_fmi(w) for w in weather]
@@ -61,7 +64,7 @@ class WeatherEmbed(embeds.Embed):
             starttime_local = _round_datetime_to_nearest_third_hour(now)
             starttime_utc = datetime_utils.local2utc(starttime_local)
             duration = datetime.timedelta(hours=self.hour_count)
-            params = weather_handler.WeatherFetchParams(starttime_utc, duration, 3 * 60)
+            params = weather_handler.WeatherFetchParams(starttime_utc, duration, self.hours_between_datapoints * 60)
             weather_handler.get_weather(self.fmi_place, params, self._set_weather)
             self.last_update = now_update
             # Not adding difference but rather setting the value
@@ -94,8 +97,7 @@ class WeatherEmbed(embeds.Embed):
         surf = pygame.Surface(size)
         surf.fill(BACKGROUND_COLOR)
 
-        COUNT = 4
-        assert len(self.weather) == COUNT
+        assert len(self.weather) == self.datapoint_count
 
         OTHER_EXTRA_VERTICAL_MARGIN: int = VERTICAL_MARGIN * 2
         CURRENT_OTHER_PADDING: int = HORIZONTAL_MARGIN * 2

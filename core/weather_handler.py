@@ -49,6 +49,7 @@ class _WeatherRequestProvider: # HACK: Passing arguments on thread start ignores
             data: dict[str, dict[str, dict[str, Any]]]
             time, data = dp
             assert isinstance(time, datetime.datetime)
+            time = time.replace(tzinfo=datetime.timezone.utc)
 
             assert len(data) == 1
             inner_data = list(data.values())[0]
