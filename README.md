@@ -1,5 +1,7 @@
-## THIS REPOSITORY HAS BEEN ARCHIVED
-### Development has moved over to the (V2 version)[https://github.com/NALStudio/Nysse-Asemanaytto-V2] written in flutter.
+# THIS REPOSITORY HAS BEEN ARCHIVED
+### Development has moved over to the [V2 version](https://github.com/NALStudio/Nysse-Asemanaytto-V2) (written in flutter).
+<br />
+<br />
 
 # Nysse Asemanäyttö
 
